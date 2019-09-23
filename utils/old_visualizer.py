@@ -12,6 +12,7 @@ import matplotlib.cm as cm
 # This import registers the 3D projection, but is otherwise unused.
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import mpl_toolkits.mplot3d.art3d as art3d
+from graph import unzip_index
 
 
 def revert_types(df):
@@ -33,13 +34,14 @@ class Visualizer:
         self.__color_map = {-1: [[0.1, 0.1, 0.1]]}
         self.__adj_track_list = []
         self.__reco_adj_list = []
-        self.__fake_hits = []
+        self.__fake_hits = np.empty(shape=(0,3))
         self.__nn_preds = []
         self.__coord_planes = []
         self.__nx_edges = []
         self.__draw_all_hits = False
         self.__draw_all_tracks_from_df = False
         self.__title = title
+        self.__nx_line_edges = []
 
     def init_draw(self, reco_tracks = None, draw_all_tracks_from_df = False, draw_all_hits = False):
         self.__draw_all_hits = draw_all_hits
@@ -48,11 +50,11 @@ class Visualizer:
         # prepare adjacency list for tracks
         for i, gp in grouped:
             if gp.track.values[0] == -1:
-                self.__fake_hits.extend(gp[['station', 'x', 'y']].values)
+                self.__fake_hits = np.append(self.__fake_hits, gp[['station', 'x', 'y']].values, axis=0)
                 continue
 
             if not self.__draw_cfg['draw_scatters_for_tracks']:
-                self.__fake_hits.extend(gp[['station', 'x', 'y']].values)
+                self.__fake_hits = np.append(self.__fake_hits, gp[['station', 'x', 'y']].values, axis=0)
 
             for row in range(1, len(gp.index)):
                 elem = (gp.index[row - 1], gp.index[row], 1)
@@ -74,6 +76,10 @@ class Visualizer:
     def add_graph_data(self, nx_graph):
         self.__nx_edges = nx_graph.edges
 
+    def add_line_graph_data(self, nx_line_graph):
+        self.__nx_line_edges = nx_line_graph.edges
+
+
     def set_title(self, title = "EVENT GRAPH"):
         self.__title = title
 
@@ -87,8 +93,7 @@ class Visualizer:
         ax.set_zlabel('Y')
         legends = {}
         if self.__draw_all_hits:
-            for fake_hit in self.__fake_hits:
-                ax.scatter(fake_hit[0], fake_hit[1], fake_hit[2], c=self.__color_map[-1], marker='o')
+            ax.scatter(self.__fake_hits[:,0], self.__fake_hits[:,1], self.__fake_hits[:,2], c=self.__color_map[-1], marker='o')
 
         if self.__draw_all_tracks_from_df:
             for adj_val in self.__adj_track_list:
@@ -129,12 +134,11 @@ class Visualizer:
         ax.set_ylabel('Station')
         legends = {}
         if self.__draw_all_hits:
-            for fake_hit in self.__fake_hits:
-                ax.scatter(fake_hit[1], fake_hit[0], c=self.__color_map[-1], marker='o')
+            ax.scatter(self.__fake_hits[:,1], self.__fake_hits[:,0], c=self.__color_map[-1], marker='o')
 
         if self.__draw_all_tracks_from_df:
             for adj_val in self.__adj_track_list:
-                col, lab, tr_id = self.draw_edge_2d(adj_val, ax)
+                col, lab, tr_id = self.draw_edge_2d(adj_val, ax, drop_fake_percent=0.8)
                 if int(tr_id) not in legends:
                     legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
 
@@ -144,6 +148,12 @@ class Visualizer:
                 legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
 
         for edge in self.__nx_edges:
+            col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=0.8)
+            if col is None:
+                continue
+            if int(tr_id) not in legends:
+                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+        for edge in self.__nx_line_edges:
             col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=0.8)
             if col is None:
                 continue
