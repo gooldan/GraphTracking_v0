@@ -7,7 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.patches as mpatches
+from matplotlib.collections import LineCollection
 from matplotlib.patches import Ellipse, Rectangle
+import pandas as pd
 import matplotlib.cm as cm
 # This import registers the 3D projection, but is otherwise unused.
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
@@ -42,6 +44,7 @@ class Visualizer:
         self.__draw_all_tracks_from_df = False
         self.__title = title
         self.__nx_line_edges = []
+        self.__pd_line_edges = pd.DataFrame()
 
     def init_draw(self, reco_tracks = None, draw_all_tracks_from_df = False, draw_all_hits = False):
         self.__draw_all_hits = draw_all_hits
@@ -77,8 +80,12 @@ class Visualizer:
         self.__nx_edges = nx_graph.edges
 
     def add_line_graph_data(self, nx_line_graph):
+        assert len(self.__nx_line_edges) == 0
         self.__nx_line_edges = nx_line_graph.edges
 
+    def add_edges_data(self, edges_df):
+        assert len(self.__pd_line_edges) == 0
+        self.__pd_line_edges = edges_df[['edge_index_p', 'edge_index_c', 'true_superedge']]
 
     def set_title(self, title = "EVENT GRAPH"):
         self.__title = title
@@ -153,6 +160,10 @@ class Visualizer:
                 continue
             if int(tr_id) not in legends:
                 legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+
+        if len(self.__pd_line_edges) > 0:
+            self.draw_edges_robust_2d(ax)
+
         for edge in self.__nx_line_edges:
             col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=0.8)
             if col is None:
@@ -161,6 +172,42 @@ class Visualizer:
                 legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
         fig.legend(handles=list(legends.values()))
         pass
+
+    def draw_edges_robust_2d(self, ax):
+        nodes_true = self.__df[self.__df.track != -1]
+        nodes_false = self.__df[self.__df.track == -1]
+
+        nodes_from_true = nodes_true.loc[self.__pd_line_edges.edge_index_p.values]
+        nodes_from_false = nodes_false.loc[self.__pd_line_edges.edge_index_p.values]
+
+        nodes_to_true = nodes_true.loc[self.__pd_line_edges.edge_index_c.values]
+        nodes_to_false = nodes_false.loc[self.__pd_line_edges.edge_index_c.values]
+
+        c = self.__pd_line_edges.apply(lambda x: 'b'
+                                            if x.true_superedge != -1
+                                            else 'r', axis=1)
+        z = self.__pd_line_edges.apply(lambda x: self.Z_ORDER_TRUE_EDGE
+                                            if x.true_superedge != -1
+                                            else self.Z_ORDER_FAKE_EDGE, axis=1)
+
+        self.draw_edges_from_nodes_2d(ax, nodes_from_false, nodes_to_false, [0.1, 0.1, 0.1, 1],
+                                      z_line=self.Z_ORDER_FAKE_EDGE, z_dot=self.Z_ORDER_FAKE_HIT)
+
+        self.draw_edges_from_nodes_2d(ax, nodes_from_true, nodes_to_true, [0.2,1.,0.2, 1],
+                                      z_line=self.Z_ORDER_TRUE_EDGE, z_dot=self.Z_ORDER_TRUE_HIT)
+
+    def draw_edges_from_nodes_2d(self, ax, nodes_from, nodes_to, color, z_line, z_dot):
+
+        ax.scatter(nodes_from.x.values, nodes_from.station.values, c=color, marker='o', zorder=z_dot)
+        ax.scatter(nodes_to.x.values, nodes_to.station.values, c=color, marker='o')
+
+        x0 = nodes_from[['x']].values
+        y0 = nodes_from[['station']].values
+        x1 = nodes_to[['x']].values
+        y1 = nodes_to[['station']].values
+        lines = np.dstack((np.hstack((x0, x1)), np.hstack((y0, y1))))
+        lk = LineCollection(lines, color=[color]*len(lines), zorder=z_line)
+        ax.add_collection(lk)
 
     def draw(self, show=True):
         if self.__draw_cfg['mode'] == '3d':

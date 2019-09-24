@@ -1,7 +1,37 @@
 import pandas as pd
 import numpy as np
+import networkx as nx
 
+def apply_node_restriction(pd_nodes_df, min_max_dx, min_max_dy):
+    assert 'dx' in pd_nodes_df and 'dy' in pd_nodes_df
+    ret = pd_nodes_df[(pd_nodes_df.dx > min_max_dx[0]) & (pd_nodes_df.dx < min_max_dx[1])]
+    ret = ret[(ret.dy > min_max_dy[0]) & (ret.dy < min_max_dy[1])]
+    return ret
 
+def to_pandas_edgelist(G, source='source', target='target', nodelist=None,
+                       dtype=None, order=None):
+    import pandas as pd
+    if nodelist is None:
+        edgelist = G.edges(data=True)
+    else:
+        edgelist = G.edges(nodelist, data=True)
+    source_nodes = [s for s, t, d in edgelist]
+    target_nodes = [t for s, t, d in edgelist]
+    all_keys = set().union(*(d.keys() for s, t, d in edgelist))
+    edge_attr = {k: [d.get(k, float("nan")) for s, t, d in edgelist]
+                 for k in all_keys}
+    edgelistdict = {source: source_nodes, target: target_nodes}
+    edgelistdict.update(edge_attr)
+    return pd.DataFrame(edgelistdict)
+
+def apply_edge_restriction(pd_edges_df, RESTRICTION=0.15):
+    assert 'weight' in pd_edges_df
+    return pd_edges_df[pd_edges_df.weight < RESTRICTION]
+
+def calc_purity_reduce_factor(df_full, df_filtered):
+    assert 'true_superedge' in df_full and 'true_superedge' in df_filtered
+
+    return len(df_filtered[df_filtered.true_superedge != -1]) / len(df_full[df_full.true_superedge != -1]), len(df_full) / len(df_filtered)
 
 def get_stations_constraints(df, stations_sizes):
     x_min_max = [-1, 1]

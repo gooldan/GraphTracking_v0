@@ -1,4 +1,5 @@
 import networkx as nx
+
 import numpy as np
 import pandas as pd
 
@@ -234,30 +235,45 @@ def get_edges_from_supernodes(sn_from, sn_to):
     else:
         ba = line_graph_edges[['dx_p', 'dy_p']].values
         cb = line_graph_edges[['dx_c', 'dy_c']].values
-        norm_ba = np.linalg.norm(ba, axis=1)
-        norm_cb = np.linalg.norm(cb, axis=1)
-        dot = np.einsum('ij,ij->i', ba, cb)
+        # norm_ba = np.linalg.norm(ba, axis=1)
+        # norm_cb = np.linalg.norm(cb, axis=1)
+        # dot = np.einsum('ij,ij->i', ba, cb)
         w = np.linalg.norm(ba - cb, axis=1)
     line_graph_edges['weight'] = w
     indexation = ['weight', 'true_superedge', 'edge_index_p', 'edge_index_c']
     return line_graph_edges[indexation]
 
-def get_pd_line_graph(pd_edges, df_config, with_station_info=True):
+def get_pd_line_graph(pd_edges, df_config, with_station_info=True, restriction_func=None, reduce_output=False):
+    if reduce_output:
+        assert restriction_func is not None
     nodes = pd.DataFrame()
     edges = pd.DataFrame()
     by_stations = [df for (ind, df) in pd_edges.groupby('station_prev')]
     if df_config['convert_to_polar']:
         set_labels(is_polar_c=True)
+    mean_purity = []
+    mean_reduce = []
     for i in range(1, len(by_stations)):
         supernodes_from = get_supernodes_df(by_stations[i - 1], with_station_info, i-1)
         supernodes_to = get_supernodes_df(by_stations[i], with_station_info, i)
+
+        if restriction_func:
+            new_from = restriction_func(supernodes_from)
+            new_to = restriction_func(supernodes_to)
+            mean_purity.append(len(new_from[new_from.track != -1])/len(supernodes_from[supernodes_from.track != -1]))
+            mean_purity.append(len(new_to[new_to.track != -1])/len(supernodes_to[supernodes_to.track != -1]))
+            mean_reduce.append(len(supernodes_from) / len(new_from))
+            mean_reduce.append(len(supernodes_to) / len(new_to))
+        if reduce_output:
+            supernodes_from = new_from
+            supernodes_to = new_to
         nodes = nodes.append(supernodes_from, sort=False)
         nodes = nodes.append(supernodes_to, sort=False)
         superedges = get_edges_from_supernodes(supernodes_from, supernodes_to)
         edges = edges.append(superedges, ignore_index=True, sort=False)
 
     nodes = nodes.loc[~nodes.index.duplicated(keep='first')]
-    return nodes, edges
+    return nodes, edges, mean_purity, mean_reduce
 
 def get_reduced_df_graph(pd_graph, hit_event_graph, get_bars_info = True):
     check_validity_single_event_in_graph(pd_graph)
@@ -298,3 +314,16 @@ def get_weight_stats(nx_di_graph):
         }
     stat_df = pd.DataFrame.from_dict(new_test_data, orient='index')
     return stat_df[stat_df.true_edge == True].weight.values, stat_df[stat_df.true_edge == False].weight.values
+
+def run_mbt_graph(pd_node_graph, pd_edge_graph):
+    new_weights = 1 / pd_edge_graph.weight.values
+    pd_edge_graph = pd_edge_graph.assign(newweight=new_weights, indexx=pd_edge_graph.index)
+    nx_gr = nx.from_pandas_edgelist(pd_edge_graph, 'edge_index_p', 'edge_index_c', ['newweight', 'indexx'], create_using=nx.DiGraph())
+    br = nx.algorithms.tree.maximum_branching(nx_gr, preserve_attrs=True)
+    reduced = nx.to_pandas_edgelist(br)
+    ret = pd_edge_graph.loc[reduced.indexx]
+    return ret, (len(ret[ret.true_superedge != -1])/len(pd_edge_graph[pd_edge_graph.true_superedge != -1])), \
+           (len(pd_edge_graph) / len(ret))
+
+
+
