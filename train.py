@@ -21,14 +21,21 @@ def parse_args():
 if __name__ == '__main__':
 
     args_in = parse_args()
+
     reader = ConfigReader(args_in.config)
     cfg = reader.cfg
     config_train = cfg['train']
+
+    if args_in.out_dir_colab != "":
+        out_dir = args_in.out_dir_colab #"/gdrive/My Drive/graph/result_colab"
+    else:
+        out_dir = config_train['result_dir']
+
     logfilename = '%(asctime)s %(levelname)s %(message)s'
 
-    os.makedirs(config_train['result_dir'], exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
 
-    logging.basicConfig(filename=(config_train['result_dir'] + "/process_log.log"), level=logging.INFO,
+    logging.basicConfig(filename=(out_dir + "/process_log.log"), level=logging.INFO,
                         format=logfilename)
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
@@ -45,9 +52,7 @@ if __name__ == '__main__':
         logging.info('Loaded %g validation samples', len(valid_data_loader.dataset))
 
     # Load the trainer
-    if args_in.out_dir_colab != "":
-        out_dir = args_in.out_dir_colab #"/gdrive/My Drive/graph/result_colab"
-    trainer = GNNTrainer( cfg['trainer'], output_dir=config_train['result_dir'],
+    trainer = GNNTrainer( cfg['trainer'], output_dir=out_dir,
                           device=args_in.device)
     # Build the model and optimizer
     trainer.build_model(**cfg.get('model', {}))
