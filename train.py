@@ -15,12 +15,13 @@ def parse_args():
     add_arg = parser.add_argument
     add_arg('--device', default='cpu')
     add_arg('--config', default='configs/train_config.yaml')
+    add_arg('--out_dir_colab', default='')
     return parser.parse_args()
 
 if __name__ == '__main__':
 
     args_in = parse_args()
-    reader = ConfigReader("configs/train_config.yaml")
+    reader = ConfigReader(args_in.config)
     cfg = reader.cfg
     config_train = cfg['train']
     logfilename = '%(asctime)s %(levelname)s %(message)s'
@@ -44,6 +45,8 @@ if __name__ == '__main__':
         logging.info('Loaded %g validation samples', len(valid_data_loader.dataset))
 
     # Load the trainer
+    if args_in.out_dir_colab != "":
+        out_dir = args_in.out_dir_colab #"/gdrive/My Drive/graph/result_colab"
     trainer = GNNTrainer( cfg['trainer'], output_dir=config_train['result_dir'],
                           device=args_in.device)
     # Build the model and optimizer
