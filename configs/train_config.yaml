@@ -1,0 +1,20 @@
+trainer:
+    real_weight: 2.0   # 0.5 / 0.1
+    fake_weight: 0.555 # 0.5 / 0.9
+
+train:
+  input_dir: 'output_first'
+  result_dir: 'result_first'
+  n_train: 250
+  n_valid: 50
+  batch_size: 1
+  n_epochs: 32
+
+model:
+  name: 'gnn_segment_classifier'
+  input_dim: 3
+  hidden_dim: 32
+  n_iters: 1
+  loss_func: 'binary_cross_entropy'
+  optimizer: 'Adam'
+  learning_rate: 0.001

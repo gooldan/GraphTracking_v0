@@ -165,13 +165,13 @@ def zip_index_pd(pd_col1_int_vals, pd_col2_int_vals):
     packed = np.bitwise_or(packed, pd_col2_int_vals.astype(np.uint32), dtype=np.uint64)
     return packed
 
-def get_supernodes_df(one_station_edges, with_station_info, station=-1):
+def get_supernodes_df(one_station_edges, with_station_info, station=-1, STAION_COUNT=5):
     ret = pd.DataFrame()
     x0_y0_z0 = one_station_edges[[LABEL_X + '_prev', LABEL_Y + '_prev', LABEL_Z + '_prev']].values
     x1_y1_z1 = one_station_edges[[LABEL_X + '_current', LABEL_Y +'_current', LABEL_Z +'_current']].values
     dx_dy_dz = x1_y1_z1 - x0_y0_z0
 
-    ret = ret.assign(dx=dx_dy_dz[:, 0], dy=dx_dy_dz[:, 1], dz=dx_dy_dz[:, 2])
+    ret = ret.assign(dx=dx_dy_dz[:, 0], dy=dx_dy_dz[:, 1], dz=dx_dy_dz[:, 2], z=(station+1)/STAION_COUNT)
     ret = ret.assign(from_ind=one_station_edges[['index_old_prev']].values.astype(np.uint32))
     ret = ret.assign(to_ind=one_station_edges[['index_old_current']].values.astype(np.uint32))
     ret = ret.assign(track=-1)
@@ -225,10 +225,11 @@ def get_pd_line_graph(pd_edges, with_station_info=True, restriction_func=None, r
         if restriction_func:
             new_from = restriction_func(supernodes_from)
             new_to = restriction_func(supernodes_to)
-            mean_purity.append(len(new_from[new_from.track != -1])/len(supernodes_from[supernodes_from.track != -1]))
-            mean_purity.append(len(new_to[new_to.track != -1])/len(supernodes_to[supernodes_to.track != -1]))
-            mean_reduce.append(len(supernodes_from) / len(new_from))
-            mean_reduce.append(len(supernodes_to) / len(new_to))
+            if not supernodes_to[supernodes_to.track != -1].empty:
+                mean_purity.append(len(new_from[new_from.track != -1])/len(supernodes_from[supernodes_from.track != -1]))
+                mean_purity.append(len(new_to[new_to.track != -1])/len(supernodes_to[supernodes_to.track != -1]))
+                mean_reduce.append(len(supernodes_from) / len(new_from))
+                mean_reduce.append(len(supernodes_to) / len(new_to))
         if reduce_output:
             supernodes_from = new_from
             supernodes_to = new_to

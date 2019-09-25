@@ -284,3 +284,34 @@ class Visualizer:
         if tr_id_from != tr_id_to or tr_id_from == -1:
             return (0.1, 0.1, 0.1), 'fake connection', -1
         return self.__color_map[tr_id_from], 'tr_id: ' + str(int(tr_id_from)), tr_id_from
+
+
+def draw_single(X, Ri, Ro, y, c_true = 'green', c_fake = (0,0,0,0.1), xcord1 = (2, 'x'), xcord2 = (1, 'y'), ycord=(0, 'z')):
+    feats_o = X[np.where(Ri.T)[1]]
+    feats_i = X[np.where(Ro.T)[1]]
+    # Prepare the figure
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 7))
+    #                0    1  2  3  4  5
+    # Draw the hits (r, phi, z, x, y, z)
+    # colMap = np.zeros_like(X)
+    # colMap[:, 0] = X[:, 0]*1.7 + 100
+    # colMap *= 1.0 / colMap.max()
+    ax0.scatter(X[:, xcord1[0]],
+                X[:, ycord[0]], c='black')
+    ax1.scatter(X[:, xcord2[0]],
+                X[:, ycord[0]], c='black')
+
+    # Draw the segments
+    for j in range(y.shape[0]):
+        ax0.plot([feats_o[j, xcord1[0]], feats_i[j, xcord1[0]]],
+                 [feats_o[j, ycord[0]], feats_i[j, ycord[0]]], '-', c=c_true if y[j] != 0 else c_fake, zorder=10 if y[j] != 0 else 1)
+        ax1.plot([feats_o[j, xcord2[0]], feats_i[j, xcord2[0]]],
+                 [feats_o[j, ycord[0]], feats_i[j, ycord[0]]], '-', c=c_true if y[j] != 0 else c_fake, zorder=10 if y[j] != 0 else 1)
+    # Adjust axes
+    ax0.set_xlabel('$%s$' % xcord1[1])
+    ax0.set_ylabel('$%s$' % ycord[1])
+
+    ax1.set_xlabel('$%s$' % xcord2[1])
+    ax1.set_ylabel('$%s$' % ycord[1])
+    plt.tight_layout()
+    plt.show()

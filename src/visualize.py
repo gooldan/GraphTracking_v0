@@ -32,6 +32,10 @@ if __name__ == '__main__':
         return apply_node_restriction(df, [-0.15, 0.25], [-0.3, 0.22])
 
     for id, event in events_df.groupby('event'):
+        vis = Visualizer(event, cfg['visualize'], title='EVENT LINEGRAPH', random_seed=14)
+        vis.init_draw(draw_all_hits=True, draw_all_tracks_from_df=True)
+        #vis.add_edges_data(edges_filtered)
+        vis.draw(show=True)
         G = to_pandas_graph_df(event)
         lg_nodes_t, lg_edges_t, mean_purity_t, mean_reduce_t = get_pd_line_graph(G,
                                                                                  with_station_info=True,
@@ -40,10 +44,7 @@ if __name__ == '__main__':
 
         like_original_df = get_like_hitgraph_from_linegraph(lg_nodes_t)
         edges_filtered = apply_edge_restriction(lg_edges_t, 0.09)
-        # vis = Visualizer(like_original_df, cfg['visualize'], title='EVENT LINEGRAPH', random_seed=14)
-        # vis.init_draw(draw_all_hits=False, draw_all_tracks_from_df=False)
-        # vis.add_edges_data(edges_filtered)
-        # vis.draw(show=False)
+
 
         #gg, p, m = run_mbt_graph(lg_nodes_t, edges_filtered)
         p, m = calc_purity_reduce_factor(lg_edges_t, edges_filtered)
