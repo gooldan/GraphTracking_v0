@@ -14,7 +14,6 @@ import matplotlib.cm as cm
 # This import registers the 3D projection, but is otherwise unused.
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import mpl_toolkits.mplot3d.art3d as art3d
-from graph import unzip_index
 
 
 def revert_types(df):

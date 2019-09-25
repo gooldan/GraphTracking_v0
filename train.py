@@ -14,6 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser('train.py')
     add_arg = parser.add_argument
     add_arg('--device', default='cpu')
+    add_arg('--config', default='configs/train_config.yaml')
     return parser.parse_args()
 
 if __name__ == '__main__':

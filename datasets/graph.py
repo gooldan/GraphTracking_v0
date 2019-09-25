@@ -10,39 +10,6 @@ import numpy as np
 # A Graph is a namedtuple of matrices (X, Ri, Ro, y)
 Graph = namedtuple('Graph', ['X', 'Ri', 'Ro', 'y'])
 
-def graph_to_sparse_new(graph):
-    Ri_rows_full, Ri_cols_full   = np.where(graph.Ri > 0.5)
-    Ri_rows_small, Ri_cols_small = np.where(graph.Ri == 0.5)
-    Ro_rows_full, Ro_cols_full   = np.where(graph.Ro > 0.5)
-    Ro_rows_small, Ro_cols_small = np.where(graph.Ro == 0.5)
-    return dict(X=graph.X, y=graph.y,
-                Ri_rows_full = Ri_rows_full,
-                Ri_rows_small =Ri_rows_small,
-                Ro_rows_full = Ro_rows_full,
-                Ro_rows_small =Ro_rows_small,
-                Ri_cols_full = Ri_cols_full,
-                Ri_cols_small =Ri_cols_small,
-                Ro_cols_full = Ro_cols_full,
-                Ro_cols_small =Ro_cols_small)
-
-def sparse_to_graph_new(X,
-                    Ri_rows_full,
-                    Ri_rows_small,
-                    Ro_rows_full,
-                    Ro_rows_small,
-                    Ri_cols_full,
-                    Ri_cols_small,
-                    Ro_cols_full,
-                    Ro_cols_small
-                    ,y, dtype=np.float32):
-    n_nodes, n_edges = X.shape[0], y.shape[0]
-    Ri = np.zeros((n_nodes, n_edges), dtype=dtype)
-    Ro = np.zeros((n_nodes, n_edges), dtype=dtype)
-    Ri[Ri_rows_small, Ri_cols_small] = 0.5
-    Ri[Ri_rows_full, Ri_cols_full] = 1
-    Ro[Ro_rows_small, Ro_cols_small] = 0.5
-    Ro[Ro_rows_full, Ro_cols_full] = 1
-    return Graph(X, Ri, Ro, y)
 
 def graph_to_sparse(graph):
     Ri_rows, Ri_cols = graph.Ri.nonzero()
@@ -78,5 +45,3 @@ def load_graph(filename):
     with np.load(filename) as f:
         return sparse_to_graph(**dict(f.items()))
 
-def load_graphs(filenames, graph_type=Graph):
-    return [load_graph(f, graph_type) for f in filenames]
