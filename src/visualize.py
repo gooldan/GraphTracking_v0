@@ -29,14 +29,14 @@ if __name__ == '__main__':
     mean_edge_reduce = []
     mean_edge_purity = []
     def restrict_func(df):
-        return apply_node_restriction(df, [-0.15, 0.25], [-0.3, 0.3])
+        return apply_node_restriction(df, [-0.15, 0.25], [-0.3, 0.22])
 
     for id, event in events_df.groupby('event'):
         G = to_pandas_graph_df(event)
-        lg_nodes_t, lg_edges_t, mean_purity_t, mean_reduce_t = get_pd_line_graph(G, cfg['df'],
+        lg_nodes_t, lg_edges_t, mean_purity_t, mean_reduce_t = get_pd_line_graph(G,
                                                                                  with_station_info=True,
                                                                                  restriction_func=restrict_func,
-                                                                                 reduce_output=True)
+                                                                                 reduce_output=False)
 
         like_original_df = get_like_hitgraph_from_linegraph(lg_nodes_t)
         edges_filtered = apply_edge_restriction(lg_edges_t, 0.09)
@@ -45,7 +45,8 @@ if __name__ == '__main__':
         # vis.add_edges_data(edges_filtered)
         # vis.draw(show=False)
 
-        gg, p, m = run_mbt_graph(lg_nodes_t, edges_filtered)
+        #gg, p, m = run_mbt_graph(lg_nodes_t, edges_filtered)
+        p, m = calc_purity_reduce_factor(lg_edges_t, edges_filtered)
         mean_edge_reduce.append(m)
         mean_edge_purity.append(p)
         #new_nodes = apply_node_restriction(lg_nodes_t, [-0.2, 0.2], [-10, 10])

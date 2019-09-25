@@ -9,19 +9,6 @@ LABEL_Z = 'z'
 LABEL_DX = 'dx'
 LABEL_DY = 'dy'
 LABEL_DZ = 'dz'
-g_is_polar = False
-
-def set_labels(is_polar_c=False):
-    if is_polar_c:
-        global LABEL_X, LABEL_Y, LABEL_Z, \
-                LABEL_DX, LABEL_DY, LABEL_DZ, g_is_polar
-        LABEL_X = 'r'
-        LABEL_Y = 'phi'
-        LABEL_Z = 'z'
-        LABEL_DX = 'dr'
-        LABEL_DY = 'dphi'
-        LABEL_DZ = 'dz'
-        g_is_polar = True
 
 def weight_func_default(data_x, data_y):
     a = data_x['x':'y'].values
@@ -183,11 +170,7 @@ def get_supernodes_df(one_station_edges, with_station_info, station=-1):
     x0_y0_z0 = one_station_edges[[LABEL_X + '_prev', LABEL_Y + '_prev', LABEL_Z + '_prev']].values
     x1_y1_z1 = one_station_edges[[LABEL_X + '_current', LABEL_Y +'_current', LABEL_Z +'_current']].values
     dx_dy_dz = x1_y1_z1 - x0_y0_z0
-    if g_is_polar:
-        # corr for over pi values
-        dphi_err = dx_dy_dz[:, 1]
-        dphi_err[dphi_err > np.pi] -= 2*np.pi
-        dphi_err[dphi_err < -np.pi] += 2 * np.pi
+
     ret = ret.assign(dx=dx_dy_dz[:, 0], dy=dx_dy_dz[:, 1], dz=dx_dy_dz[:, 2])
     ret = ret.assign(from_ind=one_station_edges[['index_old_prev']].values.astype(np.uint32))
     ret = ret.assign(to_ind=one_station_edges[['index_old_current']].values.astype(np.uint32))
@@ -215,42 +198,24 @@ def get_edges_from_supernodes(sn_from, sn_to):
     line_graph_edges.loc[index_true_superedge.index, 'true_superedge'] = index_true_superedge.track_p.values
 
 
-    if g_is_polar:
-        # if in polar system dx is dr, dy is dphi
-        ba_dr = line_graph_edges[['dx_p']].values
-        ba_dphi = line_graph_edges[['dy_p']].values
-        cb_dr = line_graph_edges[['dx_c']].values
-        cb_dphi = line_graph_edges[['dy_c']].values
-        ba_dx = ba_dr * np.cos(ba_dphi)
-        ba_dy = ba_dr * np.sin(ba_dphi)
-        cb_dx = cb_dr * np.cos(cb_dphi)
-        cb_dy = cb_dr * np.sin(cb_dphi)
-        ba = np.hstack((ba_dx, ba_dy))
-        cb = np.hstack((cb_dx, cb_dy))
-        norm_ba = np.linalg.norm(ba, axis=1)
-        norm_cb = np.linalg.norm(cb, axis=1)
-        dot = np.einsum('ij,ij->i', ba, cb)
-        w = dot / (norm_ba * norm_cb)
-        assert False # todo check error for event ~346
-    else:
-        ba = line_graph_edges[['dx_p', 'dy_p']].values
-        cb = line_graph_edges[['dx_c', 'dy_c']].values
-        # norm_ba = np.linalg.norm(ba, axis=1)
-        # norm_cb = np.linalg.norm(cb, axis=1)
-        # dot = np.einsum('ij,ij->i', ba, cb)
-        w = np.linalg.norm(ba - cb, axis=1)
+
+    ba = line_graph_edges[['dx_p', 'dy_p']].values
+    cb = line_graph_edges[['dx_c', 'dy_c']].values
+    # norm_ba = np.linalg.norm(ba, axis=1)
+    # norm_cb = np.linalg.norm(cb, axis=1)
+    # dot = np.einsum('ij,ij->i', ba, cb)
+    w = np.linalg.norm(ba - cb, axis=1)
     line_graph_edges['weight'] = w
     indexation = ['weight', 'true_superedge', 'edge_index_p', 'edge_index_c']
     return line_graph_edges[indexation]
 
-def get_pd_line_graph(pd_edges, df_config, with_station_info=True, restriction_func=None, reduce_output=False):
+def get_pd_line_graph(pd_edges, with_station_info=True, restriction_func=None, reduce_output=False):
     if reduce_output:
         assert restriction_func is not None
     nodes = pd.DataFrame()
     edges = pd.DataFrame()
     by_stations = [df for (ind, df) in pd_edges.groupby('station_prev')]
-    if df_config['convert_to_polar']:
-        set_labels(is_polar_c=True)
+
     mean_purity = []
     mean_reduce = []
     for i in range(1, len(by_stations)):
