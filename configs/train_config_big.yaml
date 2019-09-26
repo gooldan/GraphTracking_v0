@@ -6,7 +6,7 @@ train:
   input_dir: 'output_8k'
   result_dir: 'result_8k'
   n_train: 7200
-  n_valid: 80000
+  n_valid: 800
   batch_size: 1
   n_epochs: 128
 
