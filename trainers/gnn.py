@@ -66,7 +66,7 @@ class GNNTrainer(BaseTrainer):
         stdout.write('\n\n========\n\n')
         summary['train_time'] = time.time() - start_time
         summary['train_loss'] = sum_loss / (i + 1)
-        self.logger.info(' Processed %i batches' % (i + 1))
+        self.logger.info(' \nProcessed %i batches for %d sec' % ((i + 1), summary['train_time']))
         self.logger.info('  Training loss: %f' % summary['train_loss'])
         return summary
 
@@ -105,9 +105,8 @@ class GNNTrainer(BaseTrainer):
         summary['valid_prec_t'] = prec /  (i + 1)
         summary['valid_rec_t'] = rec /  (i + 1)
         summary['valid_acc_t'] = acc /  (i + 1)
-        self.logger.info(' Processed %i samples in %i batches',
-                          len(data_loader.sampler), i + 1)
-        str_to_write = "Validation loss: %f acc: %f valid_prec_t: %f valid_rec_t: %f valid_acc_t: %f'" % (summary['valid_loss'], summary['valid_acc'], summary['valid_prec_t'], summary['valid_rec_t'], summary['valid_acc_t'])
+        self.logger.info('\n Validation: Processed %d samples in %d batches for %f sec\n' % (len(data_loader.sampler), i + 1, summary['valid_time']))
+        str_to_write = "\nValidation loss: %f acc: %f valid_prec_t: %f valid_rec_t: %f valid_acc_t: %f'\n" % (summary['valid_loss'], summary['valid_acc'], summary['valid_prec_t'], summary['valid_rec_t'], summary['valid_acc_t'])
         self.logger.info(str_to_write)
         return summary
 
