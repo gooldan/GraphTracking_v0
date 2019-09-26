@@ -22,11 +22,13 @@ class EdgeNetwork(nn.Module):
             nn.Sigmoid())
     def forward(self, X, Ri, Ro):
         # Select the features of the associated nodes
-        bo = torch.bmm(Ro.transpose(1, 2), X)
-        bi = torch.bmm(Ri.transpose(1, 2), X)
-        B = torch.cat([bo, bi], dim=2)
+        # bo = torch.bmm(Ro.transpose(1, 2), X)
+        # bi = torch.bmm(Ri.transpose(1, 2), X)
+        # B = torch.cat([torch.bmm(Ro.transpose(1, 2), X),
+        #                torch.bmm(Ri.transpose(1, 2), X)], dim=2)
         # Apply the network to each edge
-        return self.network(B).squeeze(-1)
+        return self.network(torch.cat([torch.bmm(Ro.transpose(1, 2), X),
+                       torch.bmm(Ri.transpose(1, 2), X)], dim=2)).squeeze(-1)
 
 class NodeNetwork(nn.Module):
     """
@@ -44,14 +46,18 @@ class NodeNetwork(nn.Module):
             nn.Linear(output_dim, output_dim),
             hidden_activation())
     def forward(self, X, e, Ri, Ro):
-        bo = torch.bmm(Ro.transpose(1, 2), X)
-        bi = torch.bmm(Ri.transpose(1, 2), X)
-        Rwo = Ro * e[:,None]
-        Rwi = Ri * e[:,None]
-        mi = torch.bmm(Rwi, bo)
-        mo = torch.bmm(Rwo, bi)
-        M = torch.cat([mi, mo, X], dim=2)
-        return self.network(M)
+        # bo = torch.bmm(Ro.transpose(1, 2), X)
+        # bi = torch.bmm(Ri.transpose(1, 2), X)
+        # Rwo = Ro * e[:,None]
+        # Rwi = Ri * e[:,None]
+        #mi = torch.bmm(Ri * e[:,None], torch.bmm(Ro.transpose(1, 2), X))
+        #mo = torch.bmm(Ro * e[:,None], torch.bmm(Ri.transpose(1, 2), X))
+        # M = torch.cat([torch.bmm(Ri * e[:,None], torch.bmm(Ro.transpose(1, 2), X)),
+        #                torch.bmm(Ro * e[:,None], torch.bmm(Ri.transpose(1, 2), X)),
+        #                X], dim=2)
+        return self.network(torch.cat([torch.bmm(Ri * e[:,None], torch.bmm(Ro.transpose(1, 2), X)),
+                       torch.bmm(Ro * e[:,None], torch.bmm(Ri.transpose(1, 2), X)),
+                       X], dim=2))
 
 class GNNSegmentClassifier(nn.Module):
     """
@@ -82,9 +88,9 @@ class GNNSegmentClassifier(nn.Module):
         # Loop over iterations of edge and node networks
         for i in range(self.n_iters):
             # Apply edge network
-            e = self.edge_network(H, Ri, Ro)
+            #e = self.edge_network(H, Ri, Ro)
             # Apply node network
-            H = self.node_network(H, e, Ri, Ro)
+            H = self.node_network(H, self.edge_network(H, Ri, Ro), Ri, Ro)
             # Shortcut connect the inputs onto the hidden representation
             H = torch.cat([H, X], dim=-1)
         # Apply final edge network
