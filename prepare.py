@@ -56,6 +56,7 @@ def process_event(event_id, prepare_cfg, event_df, output_dir):
     edges_filtered = apply_edge_restriction(lg_edges_t, prepare_cfg['restrictions']['weight_max'])
     e_purity, e_reduce = calc_purity_reduce_factor(lg_edges_t, edges_filtered)
     G = construct_output_graph(lg_nodes_t, edges_filtered, ['dx', 'dy', 'z'])
+    #draw_graph_result(G)
     save_graphs_new([(G, (output_dir + '/graph_%d' % (event_id)))])
     return mean_reduce_t, mean_purity_t, e_reduce, e_purity
 

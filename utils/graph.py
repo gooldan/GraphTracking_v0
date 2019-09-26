@@ -225,7 +225,7 @@ def get_pd_line_graph(pd_edges, with_station_info=True, restriction_func=None, r
         if restriction_func:
             new_from = restriction_func(supernodes_from)
             new_to = restriction_func(supernodes_to)
-            if not supernodes_to[supernodes_to.track != -1].empty:
+            if not supernodes_to[supernodes_to.track != -1].empty and not new_to.empty:
                 mean_purity.append(len(new_from[new_from.track != -1])/len(supernodes_from[supernodes_from.track != -1]))
                 mean_purity.append(len(new_to[new_to.track != -1])/len(supernodes_to[supernodes_to.track != -1]))
                 mean_reduce.append(len(supernodes_from) / len(new_from))

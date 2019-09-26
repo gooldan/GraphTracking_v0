@@ -3,17 +3,17 @@ trainer:
     fake_weight: 0.555 # 0.5 / 0.9
 
 train:
-  input_dir: 'output_first'
-  result_dir: 'result_first'
-  n_train: 1300
-  n_valid: 100
+  input_dir: 'output_20k'
+  result_dir: 'result_3.5k'
+  n_train: 3200
+  n_valid: 400
   batch_size: 1
-  n_epochs: 64
+  n_epochs: 96
 
 model:
   name: 'gnn_segment_classifier'
   input_dim: 3
-  hidden_dim: 64
+  hidden_dim: 96
   n_iters: 3
   loss_func: 'binary_cross_entropy'
   optimizer: 'Adam'

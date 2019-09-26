@@ -107,8 +107,9 @@ class GNNTrainer(BaseTrainer):
         summary['valid_acc_t'] = acc /  (i + 1)
         self.logger.info(' Processed %i samples in %i batches',
                           len(data_loader.sampler), i + 1)
-        stdout.write('\r  Validation loss: %f acc: %f valid_prec_t: %f valid_rec_t: %f valid_acc_t: %f' %
-                         (summary['valid_loss'], summary['valid_acc'], summary['valid_prec_t'], summary['valid_rec_t'], summary['valid_acc_t']))
+        str_to_write = "Validation loss: %f acc: %f valid_prec_t: %f valid_rec_t: %f valid_acc_t: %f' % \
+                         (summary['valid_loss'], summary['valid_acc'], summary['valid_prec_t'], summary['valid_rec_t'], summary['valid_acc_t'])"
+        self.logger.info(str_to_write)
         return summary
 
 def _test():
