@@ -1,6 +1,6 @@
 trainer:
-    real_weight: 5   # 0.5 / 0.1
-    fake_weight: 0.5 # 0.5 / 0.9
+    real_weight: 2   # 0.5 / 0.1
+    fake_weight: 0.555 # 0.5 / 0.9
 
 train:
   input_dir: 'output_20k_full'
@@ -8,15 +8,15 @@ train:
   n_train: 16384
   n_valid: 1024
   batch_size: 1
-  n_epochs: 64
+  n_epochs: 55
   preprocess_dataset:
     filename: 'prepare_stats.csv'
 
 model:
   name: 'gnn_segment_classifier'
   input_dim: 3
-  hidden_dim: 96
-  n_iters: 1
+  hidden_dim: 64
+  n_iters: 3
   loss_func: 'binary_cross_entropy'
   optimizer: 'Adam'
   learning_rate: 0.001

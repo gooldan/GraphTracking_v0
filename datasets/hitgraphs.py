@@ -36,11 +36,10 @@ class HitGraphDataset(Dataset):
         self.df = self.df.astype({'event': 'int64'})
         filenames = 'graph_' + self.df['event'].astype('str').values + '.npz'
         self.df = self.df.assign(filenames = filenames)
-        self.df = self.df[(self.df.edge_count < 1e4) & (self.df.node_count < 1e4) & (self.df.edge_factor > 0)]
+        self.df = self.df[(self.df.edge_count < 5000) & (self.df.node_count < 5000) & (self.df.edge_factor > 0)]
         self.n_train = int(len(self.df) * 0.8)
         self.n_valid = int(len(self.df) * 0.2)
         self.df = self.df[:(self.n_train + self.n_valid)]
-        print(self.df)
         pass
 
     def __getitem__(self, index):
