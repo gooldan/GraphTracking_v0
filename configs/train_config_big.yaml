@@ -7,7 +7,7 @@ train:
   result_dir: 'result_20k_full'
   n_train: 16384
   n_valid: 1024
-  batch_size: 20
+  batch_size: 1
   n_epochs: 64
   preprocess_dataset:
     filename: 'prepare_stats.csv'
@@ -15,8 +15,8 @@ train:
 model:
   name: 'gnn_segment_classifier'
   input_dim: 3
-  hidden_dim: 128
-  n_iters: 5
+  hidden_dim: 96
+  n_iters: 1
   loss_func: 'binary_cross_entropy'
   optimizer: 'Adam'
   learning_rate: 0.001
