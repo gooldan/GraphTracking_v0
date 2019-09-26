@@ -58,14 +58,15 @@ def process_event(event_id, prepare_cfg, event_df, output_dir, logging):
     mean_purity_t, mean_reduce_t = get_pd_line_graph(G, cfg['df'], restriction_func=restrict_func, reduce_output=True)
     edges_filtered = apply_edge_restriction(lg_edges_t, prepare_cfg['restrictions']['weight_max'])
     if lg_edges_t[lg_edges_t.true_superedge != -1].empty or edges_filtered[edges_filtered.true_superedge != -1].empty:
-        return mean_reduce_t, mean_purity_t, 1, 0, len(edges_filtered), len(lg_nodes_t)
+        return mean_reduce_t, mean_purity_t, 1, 0, len(edges_filtered), len(lg_nodes_t), 0
     e_purity, e_reduce = calc_purity_reduce_factor(lg_edges_t, edges_filtered)
     logging.info("Constructing output result...")
     G = construct_output_graph(lg_nodes_t, edges_filtered, ['dx', 'dy', 'z'])
     #draw_graph_result(G)
     logging.info("Saving result...")
     save_graphs_new([(G, (output_dir + '/graph_%d' % (event_id)))])
-    return mean_reduce_t, mean_purity_t, e_reduce, e_purity, len(edges_filtered), len(lg_nodes_t)
+    edge_factor = len(edges_filtered[edges_filtered.true_superedge == -1]) / len(edges_filtered[edges_filtered.true_superedge != -1])
+    return mean_reduce_t, mean_purity_t, e_reduce, e_purity, len(edges_filtered), len(lg_nodes_t), edge_factor
 
 def draw_graph_result(G = None, graph_path = None):
     if G:
@@ -111,6 +112,7 @@ def prepare_events(base_cfg, config_prepare, events_df):
         'purity_edge': [],
         'edge_count': [],
         'node_count': [],
+        'edge_factor': [],
         'process_time': []
     }
     # reduce = []
@@ -124,25 +126,33 @@ def prepare_events(base_cfg, config_prepare, events_df):
     for id, event in events_df.groupby('event'):
             one_event_start_time = time.time()
             logging.info("Processing event #%09d ...." % id)
-            console_write('\r Processing event #%09d ....' % id)
+            #console_write('\r Processing event #%09d ....' % id)
             try:
                 reduce_t, purity_t, e_reduce, \
-                e_purity, edge_count_, node_count_ = process_event(id, config_prepare, event, config_prepare['output_dir'], logging)
+                e_purity, edge_count_, node_count_, edge_factor = process_event(id, config_prepare, event, config_prepare['output_dir'], logging)
             except MemoryError:
                 logging.info("MEMORY ERROR ON %d event" % id)
                 console_write('\n\n mem error event %d \n\n' % id)
                 continue
             except KeyboardInterrupt:
                 break
+            except ValueError:
+                continue
             info_dict['event'].append(id)
             info_dict['reduce'].append(np.mean(reduce_t))
             info_dict['purity'].append(np.mean(purity_t))
             info_dict['reduce_edge'].append(e_reduce)
             info_dict['purity_edge'].append(e_purity)
             info_dict['edge_count'].append(edge_count_)
+            info_dict['edge_factor'].append(edge_factor)
             info_dict['node_count'].append(node_count_)
             info_dict['process_time'].append(time.time() - one_event_start_time)
-            logging.info("Done (%.5f sec).  p: %.5f r: %.5f ep: %.5f er: %.5f" %((time.time() - one_event_start_time), np.mean(purity_t), np.mean(reduce_t), e_purity, e_reduce))
+
+            console_write('\r Processing event #%09d .... p: %03.5f r: %03.5f ep: %03.5f er: %03.5f, f: %03.5f' %
+                          (id, np.mean(purity_t), np.mean(reduce_t), e_purity, e_reduce, edge_factor))
+
+            logging.info("Done (%.5f sec).  p: %.5f r: %.5f ep: %.5f er: %.5f f: %03.5f" %
+                         ((time.time() - one_event_start_time), np.mean(purity_t), np.mean(reduce_t), e_purity, e_reduce, edge_factor))
             count += 1
 
 
