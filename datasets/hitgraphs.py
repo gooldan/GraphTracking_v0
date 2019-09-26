@@ -5,6 +5,7 @@ PyTorch specification for the hit graph dataset.
 # System imports
 import os
 import logging
+import pandas as pd
 
 # External imports
 import numpy as np
@@ -17,23 +18,48 @@ from datasets.graph import load_graph
 class HitGraphDataset(Dataset):
     """PyTorch dataset specification for hit graphs"""
 
-    def __init__(self, input_dir, n_samples=None):
-        input_dir = os.path.expandvars(input_dir)
-        filenames = [os.path.join(input_dir, f) for f in os.listdir(input_dir)
+    def __init__(self, input_dir, n_samples=None, preproc_df_path=None):
+        self.input_dir = os.path.expandvars(input_dir)
+        filenames = [os.path.join(self.input_dir, f) for f in os.listdir(self.input_dir)
                      if f.endswith('.npz')]
         self.filenames = (
             filenames[:n_samples] if n_samples is not None else filenames)
+        self.is_concrete_files = False
+        self.df = None
+        if preproc_df_path is not None:
+            self.preproc_files(preproc_df_path)
+            self.is_concrete_files = True
+            pass
+
+    def preproc_files(self, df_path):
+        self.df = pd.read_csv(df_path)
+        self.df = self.df.astype({'event': 'int64'})
+        filenames = 'graph_' + self.df['event'].astype('str').values + '.npz'
+        self.df = self.df.assign(filenames = filenames)
+        self.df = self.df[(self.df.edge_count < 1e4) & (self.df.node_count < 1e4) & (self.df.edge_factor > 0)]
+        self.n_train = int(len(self.df) * 0.8)
+        self.n_valid = int(len(self.df) * 0.2)
+        self.df = self.df[:(self.n_train + self.n_valid)]
+        print(self.df)
+        pass
 
     def __getitem__(self, index):
+        if self.is_concrete_files:
+            return load_graph(os.path.join(self.input_dir, self.df.iloc[index][['filenames']].values[0]))
         return load_graph(self.filenames[index])
 
     def __len__(self):
+        if self.is_concrete_files:
+            return len(self.df)
         return len(self.filenames)
 
-def get_datasets(input_dir, n_train, n_valid):
-    data = HitGraphDataset(input_dir, n_train + n_valid)
+def get_datasets(input_dir, n_train, n_valid, preproc_df_path):
+    data = HitGraphDataset(input_dir, n_train + n_valid, preproc_df_path)
     # Split into train and validation
-    train_data, valid_data = random_split(data, [n_train, n_valid])
+    if data.is_concrete_files:
+        train_data, valid_data = random_split(data, [data.n_train, data.n_valid])
+    else:
+        train_data, valid_data = random_split(data, [n_train, n_valid])
     return train_data, valid_data
 
 def collate_fn(graphs):

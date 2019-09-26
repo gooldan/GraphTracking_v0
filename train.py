@@ -14,7 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser('train.py')
     add_arg = parser.add_argument
     add_arg('--device', default='cpu')
-    add_arg('--config', default='configs/train_config.yaml')
+    add_arg('--config', default='configs/train_config_big.yaml')
     add_arg('--out_dir_colab', default='')
     return parser.parse_args()
 
