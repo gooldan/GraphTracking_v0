@@ -2,10 +2,10 @@
 
 
 df:
-  df_path: 'data/train/CC4GeVmb_100_n50k.tsv'
-  event_ids: ['1..20000'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
+  df_path: 'data/train/CC4GeVmb_104_n50k.tsv'
+  event_ids: ['1000..6000'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
   read_only_first_lines: False #250000
-  drop_broken_tracks: True # drop tracks with the gaps or which does not start at station #0
+  drop_broken_tracks: False # drop tracks with the gaps or which does not start at station #0
   convert_to_polar: False
   normalize: True
   stations_sizes: [
@@ -24,7 +24,7 @@ visualize:
   mode: '2d' # '3d'
 
 prepare:
-  output_dir: 'output_20k_full'
+  output_dir: 'with_broken'
   restrictions:
     x_min_max: [-0.15, 0.25]
     y_min_max: [-0.3, 0.22]

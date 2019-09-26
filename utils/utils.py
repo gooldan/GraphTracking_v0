@@ -130,7 +130,7 @@ def get_events_df(config_df, hits_df, preserve_fakes=True, drop_full_tracks=Fals
             ev_hits = dropBroken(event, preserve_fakes=preserve_fakes, drop_full_tracks=drop_full_tracks)
             hits.loc[hits.event == id] = ev_hits
     else:
-        assert preserve_fakes and drop_full_tracks and "Error, you are not dropping broken but attempting to 'drop_full_tracks' or 'preserve_fakes'"
+        assert preserve_fakes and not drop_full_tracks and "Error, you are not dropping broken but attempting to 'drop_full_tracks' or 'preserve_fakes'"
     if config_df['convert_to_polar'] or config_df['normalize']:
         hits = normalize_convert_to_r_phi_z(hits, config_df['stations_sizes'], config_df['convert_to_polar'])
         pass

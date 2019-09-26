@@ -285,11 +285,11 @@ class Visualizer:
         return self.__color_map[tr_id_from], 'tr_id: ' + str(int(tr_id_from)), tr_id_from
 
 
-def draw_single(X, Ri, Ro, y, c_true = 'green', c_fake = (0,0,0,0.1), xcord1 = (2, 'x'), xcord2 = (1, 'y'), ycord=(0, 'z')):
+def draw_single(X, Ri, Ro, y, c_true = 'green', c_fake = (0,0,0,0.1), xcord1 = (2, 'x'), xcord2 = (1, 'y'), ycord=(0, 'z'), draw_fake=True):
     feats_o = X[np.where(Ri.T)[1]]
     feats_i = X[np.where(Ro.T)[1]]
     # Prepare the figure
-    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 7))
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 5))
     #                0    1  2  3  4  5
     # Draw the hits (r, phi, z, x, y, z)
     # colMap = np.zeros_like(X)
@@ -303,9 +303,9 @@ def draw_single(X, Ri, Ro, y, c_true = 'green', c_fake = (0,0,0,0.1), xcord1 = (
     # Draw the segments
     for j in range(y.shape[0]):
         ax0.plot([feats_o[j, xcord1[0]], feats_i[j, xcord1[0]]],
-                 [feats_o[j, ycord[0]], feats_i[j, ycord[0]]], '-', c=c_true if y[j] != 0 else c_fake, zorder=10 if y[j] != 0 else 1)
+                 [feats_o[j, ycord[0]], feats_i[j, ycord[0]]], '-', c=c_true if y[j] > 0.5 else c_fake, zorder=10 if y[j] > 0.5 else 1)
         ax1.plot([feats_o[j, xcord2[0]], feats_i[j, xcord2[0]]],
-                 [feats_o[j, ycord[0]], feats_i[j, ycord[0]]], '-', c=c_true if y[j] != 0 else c_fake, zorder=10 if y[j] != 0 else 1)
+                 [feats_o[j, ycord[0]], feats_i[j, ycord[0]]], '-', c=c_true if y[j] > 0.5 else c_fake, zorder=10 if y[j] > 0.5 else 1)
     # Adjust axes
     ax0.set_xlabel('$%s$' % xcord1[1])
     ax0.set_ylabel('$%s$' % ycord[1])

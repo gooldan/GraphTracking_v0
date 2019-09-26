@@ -18,8 +18,9 @@ from datasets.graph import load_graph
 class HitGraphDataset(Dataset):
     """PyTorch dataset specification for hit graphs"""
 
-    def __init__(self, input_dir, n_samples=None, preproc_df_path=None):
+    def __init__(self, input_dir, n_samples=None, preproc_df_path=None, train_cfg=None):
         self.input_dir = os.path.expandvars(input_dir)
+        self.train_cfg = train_cfg
         filenames = [os.path.join(self.input_dir, f) for f in os.listdir(self.input_dir)
                      if f.endswith('.npz')]
         self.filenames = (
@@ -36,7 +37,12 @@ class HitGraphDataset(Dataset):
         self.df = self.df.astype({'event': 'int64'})
         filenames = 'graph_' + self.df['event'].astype('str').values + '.npz'
         self.df = self.df.assign(filenames = filenames)
-        self.df = self.df[(self.df.edge_count < 5000) & (self.df.node_count < 5000) & (self.df.edge_factor > 0)]
+        self.df = self.df[(self.df.edge_count > self.train_cfg["preprocess_dataset"]['edge_count_min']) &
+                          (self.df.edge_count < self.train_cfg["preprocess_dataset"]['edge_count_max']) &
+                          (self.df.node_count < self.train_cfg["preprocess_dataset"]['node_count_max']) &
+                          (self.df.node_count > self.train_cfg["preprocess_dataset"]['node_count_min']) &
+                          (self.df.edge_factor > 0)]
+
         self.n_train = int(len(self.df) * 0.8)
         self.n_valid = int(len(self.df) * 0.2)
         self.df = self.df[:(self.n_train + self.n_valid)]
@@ -52,8 +58,8 @@ class HitGraphDataset(Dataset):
             return len(self.df)
         return len(self.filenames)
 
-def get_datasets(input_dir, n_train, n_valid, preproc_df_path):
-    data = HitGraphDataset(input_dir, n_train + n_valid, preproc_df_path)
+def get_datasets(input_dir, n_train, n_valid, preproc_df_path, train_cfg):
+    data = HitGraphDataset(input_dir, n_train + n_valid, preproc_df_path, train_cfg)
     # Split into train and validation
     if data.is_concrete_files:
         train_data, valid_data = random_split(data, [data.n_train, data.n_valid])

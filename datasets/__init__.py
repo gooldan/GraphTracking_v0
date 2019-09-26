@@ -19,7 +19,7 @@ def get_data_loaders(train_cfg):
     preproc_df_path = None
     if train_cfg['preprocess_dataset']:
         preproc_df_path = train_cfg['input_dir'] + '/' + train_cfg['preprocess_dataset']['filename']
-    train_dataset, valid_dataset = hitgraphs.get_datasets(input_dir, n_train, n_valid, preproc_df_path)
+    train_dataset, valid_dataset = hitgraphs.get_datasets(input_dir, n_train, n_valid, preproc_df_path, train_cfg)
     collate_fn = hitgraphs.collate_fn
 
 

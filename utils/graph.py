@@ -268,6 +268,7 @@ def get_reduced_df_graph(pd_graph, hit_event_graph, get_bars_info = True):
     return res_df
 
 
+
 def get_weight_stats(nx_di_graph):
     new_test_data = {}
     for ind, edge in enumerate(nx_di_graph.edges(data=True)):
