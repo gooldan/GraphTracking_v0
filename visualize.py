@@ -40,11 +40,13 @@ if __name__ == '__main__':
         lg_nodes_t, lg_edges_t, mean_purity_t, mean_reduce_t = get_pd_line_graph(G,
                                                                                  with_station_info=True,
                                                                                  restriction_func=restrict_func,
-                                                                                 reduce_output=False)
+                                                                                 reduce_output=True)
 
         like_original_df = get_like_hitgraph_from_linegraph(lg_nodes_t)
         edges_filtered = apply_edge_restriction(lg_edges_t, 0.09)
 
+        print(len(lg_edges_t))
+        print(len(edges_filtered))
 
         #gg, p, m = run_mbt_graph(lg_nodes_t, edges_filtered)
         p, m = calc_purity_reduce_factor(lg_edges_t, edges_filtered)
