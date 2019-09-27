@@ -61,7 +61,7 @@ def process_event(event_id, prepare_cfg, event_df, output_dir, logging):
         return mean_reduce_t, mean_purity_t, 1, 0, len(edges_filtered), len(lg_nodes_t), 0
     e_purity, e_reduce = calc_purity_reduce_factor(lg_edges_t, edges_filtered)
     logging.info("Constructing output result...")
-    G = construct_output_graph(lg_nodes_t, edges_filtered, ['dx', 'dy', 'z'])
+    G = construct_output_graph(lg_nodes_t, edges_filtered, ['x_p', 'x_c', 'y_p', 'y_c' 'z'])
     #draw_graph_result(G)
     logging.info("Saving result...")
     save_graphs_new([(G, (output_dir + '/graph_%d' % (event_id)))])
