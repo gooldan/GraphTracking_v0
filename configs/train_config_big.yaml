@@ -8,8 +8,8 @@ train:
   n_train: 1100
   n_valid: 70
   batch_size: 1
-  n_epochs: 55
-  preprocess_dataset: 
+  n_epochs: 168
+  preprocess_dataset:
     filename: 'prepare_stats.csv'
     edge_count_max: 5000
     edge_count_min: 5
