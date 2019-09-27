@@ -1,20 +1,20 @@
 trainer:
-    real_weight: 10   # 0.5 / 0.1
-    fake_weight: 2 # 0.5 / 0.9
+    real_weight: 5   # 0.5 / 0.1
+    fake_weight: 0.555 # 0.5 / 0.9
 
 train:
   input_dir: '5_features_6k'
   result_dir: 'results_5_features_6k'
-  n_train: 1600
-  n_valid: 100
+  n_train: 1100
+  n_valid: 70
   batch_size: 1
   n_epochs: 55
-  preprocess_dataset:
+  preprocess_dataset: False
     filename: 'prepare_stats.csv'
-    edge_count_max: 10000
+    edge_count_max: 5000
     edge_count_min: 5
     node_count_min: 5
-    node_count_max: 10000
+    node_count_max: 5000
 
 model:
   name: 'gnn_segment_classifier'
