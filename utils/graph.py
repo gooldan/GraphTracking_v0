@@ -172,10 +172,10 @@ def get_supernodes_df(one_station_edges, with_station_info, station=-1, STAION_C
     dx_dy_dz = x1_y1_z1 - x0_y0_z0
 
     ret = ret.assign(dx=dx_dy_dz[:, 0], dy=dx_dy_dz[:, 1],
-                     x_p=one_station_edges.x_prev,
-                     x_c=one_station_edges.x_current,
-                     y_p=one_station_edges.y_prev,
-                     y_c=one_station_edges.y_current,
+                     x_p=one_station_edges.x_prev.values,
+                     x_c=one_station_edges.x_current.values,
+                     y_p=one_station_edges.y_prev.values,
+                     y_c=one_station_edges.y_current.values,
                      dz=dx_dy_dz[:, 2], z=(station+1)/STAION_COUNT)
     ret = ret.assign(from_ind=one_station_edges[['index_old_prev']].values.astype(np.uint32))
     ret = ret.assign(to_ind=one_station_edges[['index_old_current']].values.astype(np.uint32))

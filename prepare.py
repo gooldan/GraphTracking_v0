@@ -55,13 +55,13 @@ def process_event(event_id, prepare_cfg, event_df, output_dir, logging):
 
     logging.info("Constructing linegraph...")
     lg_nodes_t, lg_edges_t, \
-    mean_purity_t, mean_reduce_t = get_pd_line_graph(G, cfg['df'], restriction_func=restrict_func, reduce_output=True)
+    mean_purity_t, mean_reduce_t = get_pd_line_graph(G, with_station_info=False, restriction_func=restrict_func, reduce_output=True)
     edges_filtered = apply_edge_restriction(lg_edges_t, prepare_cfg['restrictions']['weight_max'])
     if lg_edges_t[lg_edges_t.true_superedge != -1].empty or edges_filtered[edges_filtered.true_superedge != -1].empty:
         return mean_reduce_t, mean_purity_t, 1, 0, len(edges_filtered), len(lg_nodes_t), 0
     e_purity, e_reduce = calc_purity_reduce_factor(lg_edges_t, edges_filtered)
     logging.info("Constructing output result...")
-    G = construct_output_graph(lg_nodes_t, edges_filtered, ['x_p', 'x_c', 'y_p', 'y_c' 'z'])
+    G = construct_output_graph(lg_nodes_t, edges_filtered, ['x_p', 'x_c', 'y_p', 'y_c', 'z'])
     #draw_graph_result(G)
     logging.info("Saving result...")
     save_graphs_new([(G, (output_dir + '/graph_%d' % (event_id)))])
@@ -76,7 +76,7 @@ def draw_graph_result(G = None, graph_path = None):
     else:
         assert False and "Nothing to draw"
 
-    draw_single(X, Ri, Ro, y, xcord1=(0, 'x'), xcord2=(1, 'y'), ycord=(2, 'z'))
+    draw_single(X, Ri, Ro, y, c_fake = (0,0,0,0.0), xcord1=(0, 'x'), xcord2=(1, 'y'), ycord=(4, 'z'))
 
 def prepare_events(base_cfg, config_prepare, events_df):
     os.makedirs(config_prepare['output_dir'], exist_ok=True)

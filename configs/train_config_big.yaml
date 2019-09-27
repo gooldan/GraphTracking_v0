@@ -3,22 +3,22 @@ trainer:
     fake_weight: 2 # 0.5 / 0.9
 
 train:
-  input_dir: 'with_broken'
-  result_dir: 'result_with_broken'
-  n_train: 16384
-  n_valid: 1024
+  input_dir: '5_features_6k'
+  result_dir: 'results_5_features_6k'
+  n_train: 1600
+  n_valid: 100
   batch_size: 1
   n_epochs: 55
   preprocess_dataset:
     filename: 'prepare_stats.csv'
-    edge_count_max: 5000
-    edge_count_min: 100
-    node_count_min: 50
-    node_count_max: 1000
+    edge_count_max: 10000
+    edge_count_min: 5
+    node_count_min: 5
+    node_count_max: 10000
 
 model:
   name: 'gnn_segment_classifier'
-  input_dim: 3
+  input_dim: 5
   hidden_dim: 64
   n_iters: 3
   loss_func: 'binary_cross_entropy'
