@@ -136,7 +136,7 @@ def prepare_events(base_cfg, config_prepare, events_df):
                 continue
             except KeyboardInterrupt:
                 break
-            except ValueError:
+            except :
                 continue
             info_dict['event'].append(id)
             info_dict['reduce'].append(np.mean(reduce_t))

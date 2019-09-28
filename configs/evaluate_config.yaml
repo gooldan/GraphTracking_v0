@@ -3,22 +3,23 @@ trainer:
     fake_weight: 2 # 0.5 / 0.9
 
 train:
-  input_dir: '../for_test'
-  result_dir: '../result_colab_8k'
+  input_dir: '../5_features_6k'
+  result_dir: '../results_5_features_15k_128_1_it'
   n_train: 16384
   n_valid: 1024
   batch_size: 20
   n_epochs: 55
   preprocess_dataset:
     filename: 'prepare_stats.csv'
-    edge_count_max: 1000
-    edge_count_min: 100
-    node_count_max: 3000
+    edge_count_max: 5000
+    edge_count_min: 5
+    node_count_min: 5
+    node_count_max: 5000
 
 model:
   name: 'gnn_segment_classifier'
-  input_dim: 3
-  hidden_dim: 96
+  input_dim: 5
+  hidden_dim: 128
   n_iters: 1
   loss_func: 'binary_cross_entropy'
   optimizer: 'Adam'

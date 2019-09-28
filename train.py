@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     # Load the trainer
     trainer = GNNTrainer( cfg['trainer'], output_dir=out_dir,
-                          device=args_in.device)
+                          device=args_in.device, train_loader=train_data_loader)
     # Build the model and optimizer
     trainer.build_model(**cfg.get('model', {}))
     trainer.print_model_summary()

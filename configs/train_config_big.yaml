@@ -1,26 +1,26 @@
 trainer:
-    real_weight: 5   # 0.5 / 0.1
+    real_weight: 3   # 0.5 / 0.1
     fake_weight: 0.555 # 0.5 / 0.9
 
 train:
-  input_dir: '5_features_6k'
-  result_dir: 'results_5_features_6k'
-  n_train: 1100
-  n_valid: 70
+  input_dir: '5_features_15k'
+  result_dir: 'results_5_features_15k_128_harder'
+  n_train: 7000
+  n_valid: 800
   batch_size: 1
-  n_epochs: 168
+  n_epochs: 150
   preprocess_dataset:
     filename: 'prepare_stats.csv'
-    edge_count_max: 5000
+    edge_count_max: 20000
     edge_count_min: 5
     node_count_min: 5
-    node_count_max: 5000
+    node_count_max: 25000
 
 model:
   name: 'gnn_segment_classifier'
   input_dim: 5
-  hidden_dim: 64
-  n_iters: 3
+  hidden_dim: 128
+  n_iters: 6
   loss_func: 'binary_cross_entropy'
   optimizer: 'Adam'
   learning_rate: 0.001

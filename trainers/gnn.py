@@ -20,10 +20,11 @@ from sys import stdout
 class GNNTrainer(BaseTrainer):
     """Trainer code for basic classification problems."""
 
-    def __init__(self, cfg_trainer,  **kwargs):
+    def __init__(self, cfg_trainer, train_loader=None,  **kwargs):
         super(GNNTrainer, self).__init__(**kwargs)
         self.real_weight = cfg_trainer['real_weight']
         self.fake_weight = cfg_trainer['fake_weight']
+        self.stepsize = 4 * len(train_loader)
 
     def build_model(self, name='gnn_segment_classifier',
                     optimizer='Adam', learning_rate=0.001,
@@ -34,10 +35,14 @@ class GNNTrainer(BaseTrainer):
         self.model = get_model(name=name, **model_args).to(self.device)
 
         # TODO: LR scaling
-        self.optimizer = getattr(torch.optim, optimizer)(
-            self.model.parameters(), lr=learning_rate)
+        # self.optimizer = getattr(torch.optim, optimizer)(
+        #     self.model.parameters(), lr=learning_rate)
         # Functional loss functions
         self.loss_func = getattr(nn.functional, loss_func)
+
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
+
 
 #    @profile
     def train_epoch(self, data_loader):
@@ -59,7 +64,9 @@ class GNNTrainer(BaseTrainer):
             batch_output = self.model(batch_input)
             batch_loss = self.loss_func(batch_output, batch_target, weight=batch_weights)
             batch_loss.backward()
+
             self.optimizer.step()
+
             sum_loss += batch_loss.item()
             stdout.write('\r  batch %i, loss %f' %(i, batch_loss.item()))
 
@@ -98,6 +105,7 @@ class GNNTrainer(BaseTrainer):
             #self.logger.debug(' batch %d prec %f', )
             sum_correct += matches.sum().item()
             sum_total += matches.numel()
+        self.scheduler.step(sum_loss / (i + 1))
         summary['valid_time'] = time.time() - start_time
         summary['valid_loss'] = sum_loss / (i + 1)
         summary['valid_acc'] = sum_correct / sum_total
