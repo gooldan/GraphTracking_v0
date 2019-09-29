@@ -32,7 +32,7 @@ class Visualizer:
         self.__df = df
         self.__draw_cfg = cfg
         self.__axs = []
-        self.__color_map = {-1: [[0.1, 0.1, 0.1]]}
+        self.__color_map = {-1: np.array([[0.1, 0.1, 0.1, 1.]])}
         self.__adj_track_list = []
         self.__reco_adj_list = []
         self.__fake_hits = np.empty(shape=(0,3))
@@ -44,6 +44,7 @@ class Visualizer:
         self.__title = title
         self.__nx_line_edges = []
         self.__pd_line_edges = pd.DataFrame()
+        self.__pd_line_edges_ex = pd.DataFrame()
 
     def init_draw(self, reco_tracks = None, draw_all_tracks_from_df = False, draw_all_hits = False):
         self.__draw_all_hits = draw_all_hits
@@ -86,6 +87,9 @@ class Visualizer:
         assert len(self.__pd_line_edges) == 0
         self.__pd_line_edges = edges_df[['edge_index_p', 'edge_index_c', 'true_superedge']]
 
+    def add_edges_data_ex(self, edges_df):
+        self.__pd_line_edges_ex = edges_df
+
     def set_title(self, title = "EVENT GRAPH"):
         self.__title = title
 
@@ -105,12 +109,13 @@ class Visualizer:
             for adj_val in self.__adj_track_list:
                 col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
                 if int(tr_id) not in legends:
-                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for adj_val in self.__reco_adj_list:
             col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for ell_data in self.__nn_preds:
             ell = Ellipse(xy=ell_data[2], width=ell_data[3][0], height=ell_data[3][1], color='red')
@@ -119,7 +124,7 @@ class Visualizer:
             col, lab, tr_id = self.draw_edge_3d_from_idx_to_pnt(ell_data[1], [ell_data[0], ell_data[2][0], ell_data[2][1]],
                                                              ax)
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for station_id, coord_planes in enumerate(self.__coord_planes):
             for rect_data in coord_planes:
@@ -131,10 +136,13 @@ class Visualizer:
 
         fig.legend(handles=list(legends.values()))
 
-    def draw_2d(self):
+
+
+    def draw_2d(self, ax):
         assert len(self.__nn_preds) == 0 and "Can not draw ellipses on 2d plot"
         fig = plt.figure(figsize=(6, 6))
-        ax = fig.add_subplot(111)
+        if ax is None:
+            ax = fig.add_subplot(111)
         ax.set_title(self.__title)
         ax.set_xlabel('X')
         ax.set_ylabel('Station')
@@ -146,31 +154,34 @@ class Visualizer:
             for adj_val in self.__adj_track_list:
                 col, lab, tr_id = self.draw_edge_2d(adj_val, ax, drop_fake_percent=0.8)
                 if int(tr_id) not in legends:
-                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for adj_val in self.__reco_adj_list:
             col, lab, tr_id = self.draw_edge_2d(adj_val, ax)
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for edge in self.__nx_edges:
             col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=0.8)
             if col is None:
                 continue
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         if len(self.__pd_line_edges) > 0:
             self.draw_edges_robust_2d(ax)
+
+        if len(self.__pd_line_edges_ex) > 0:
+            self.draw_edges_robust_2d_ex(ax)
 
         for edge in self.__nx_line_edges:
             col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=0.8)
             if col is None:
                 continue
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
         fig.legend(handles=list(legends.values()))
-        pass
+        return ax
 
     def draw_edges_robust_2d(self, ax):
         nodes_true = self.__df[self.__df.track != -1]
@@ -189,36 +200,36 @@ class Visualizer:
                                             if x.true_superedge != -1
                                             else self.Z_ORDER_FAKE_EDGE, axis=1)
 
-        self.draw_edges_from_nodes_2d(ax, nodes_from_false, nodes_to_false, [0.1, 0.1, 0.1, 1],
-                                      z_line=self.Z_ORDER_FAKE_EDGE, z_dot=self.Z_ORDER_FAKE_HIT)
+        self.draw_edges_from_nodes_2d(ax, nodes_from_false, nodes_to_false, [0.1, 0.1, 0.1, 0.5],  [0.1, 0.1, 0.1, 1],
+                                      self.Z_ORDER_FAKE_EDGE, self.Z_ORDER_FAKE_HIT, 1)
 
-        self.draw_edges_from_nodes_2d(ax, nodes_from_true, nodes_to_true, [0.2,1.,0.2, 1],
-                                      z_line=self.Z_ORDER_TRUE_EDGE, z_dot=self.Z_ORDER_TRUE_HIT)
+        self.draw_edges_from_nodes_2d(ax, nodes_from_true, nodes_to_true, 'orange',  [0.1, 0.1, 0.1, 1],
+                                      self.Z_ORDER_TRUE_EDGE, self.Z_ORDER_TRUE_HIT, 2)
 
-    def draw_edges_from_nodes_2d(self, ax, nodes_from, nodes_to, color, z_line, z_dot):
+    def draw_edges_from_nodes_2d(self, ax, nodes_from, nodes_to, color, pnt_color, z_line, z_dot, line_width ):
 
-        ax.scatter(nodes_from.x.values, nodes_from.station.values, c=color, marker='o', zorder=z_dot)
-        ax.scatter(nodes_to.x.values, nodes_to.station.values, c=color, marker='o')
+        ax.scatter(nodes_from.x.values, nodes_from.station.values, c=pnt_color, marker='o', zorder=z_dot)
+        ax.scatter(nodes_to.x.values, nodes_to.station.values, c=pnt_color, marker='o')
 
         x0 = nodes_from[['x']].values
         y0 = nodes_from[['station']].values
         x1 = nodes_to[['x']].values
         y1 = nodes_to[['station']].values
         lines = np.dstack((np.hstack((x0, x1)), np.hstack((y0, y1))))
-        lk = LineCollection(lines, color=[color]*len(lines), zorder=z_line)
+        lk = LineCollection(lines, color=[color]*len(lines), linewidths=[line_width]*len(lines), zorder=z_line)
         ax.add_collection(lk)
 
-    def draw(self, show=True):
+    def draw(self, show=True, ax=None):
         if self.__draw_cfg['mode'] == '3d':
-            self.draw_3d()
+            ax = self.draw_3d()
         else:
-            self.draw_2d()
+            ax = self.draw_2d(ax)
 
-        plt.draw_all()
-        plt.tight_layout()
         if show:
+            plt.draw_all()
+            plt.tight_layout()
             plt.show()
-        pass
+        return ax
 
     def draw_edge_3d(self, adj_val, ax):
         hit_from = self.__df.loc[adj_val[0]]
@@ -243,7 +254,7 @@ class Visualizer:
         marker_2 = 'h' if hit_to.track == -1 else 'o'
         zorder_edge = Visualizer.Z_ORDER_TRUE_EDGE if tr_id != -1 else Visualizer.Z_ORDER_FAKE_EDGE
         zorder_hit = Visualizer.Z_ORDER_TRUE_HIT if tr_id != -1 else Visualizer.Z_ORDER_FAKE_HIT
-        ax.plot((hit_from.x, hit_to.x), (hit_from.station, hit_to.station), c=color, zorder=zorder_edge)
+        ax.plot((hit_from.x, hit_to.x), (hit_from.station, hit_to.station), c=color[0], zorder=zorder_edge)
         if self.__draw_cfg['draw_scatters_for_tracks']:
             ax.scatter(hit_from.x, hit_from.station, c=self.__color_map[int(hit_from.track)], marker=marker_1, zorder=zorder_hit)
             ax.scatter(hit_to.x, hit_to.station, c=self.__color_map[int(hit_to.track)], marker=marker_2, zorder=zorder_hit)
@@ -277,9 +288,9 @@ class Visualizer:
 
     def generate_color_label_2d(self, tr_id_from, tr_id_to):
         if tr_id_from not in self.__color_map:
-            self.__color_map[tr_id_from] = np.random.rand(3,)
+            self.__color_map[tr_id_from] = np.array(np.append(np.random.rand(3,),1)).reshape((1,4))
         if tr_id_to not in self.__color_map:
-            self.__color_map[tr_id_to] = np.random.rand(3,)
+            self.__color_map[tr_id_to] = np.array(np.append(np.random.rand(3,),1)).reshape((1,4))
         if tr_id_from != tr_id_to or tr_id_from == -1:
             return (0.1, 0.1, 0.1), 'fake connection', -1
         return self.__color_map[tr_id_from], 'tr_id: ' + str(int(tr_id_from)), tr_id_from

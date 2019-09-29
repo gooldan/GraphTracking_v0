@@ -4,17 +4,17 @@ trainer:
 
 train:
   input_dir: '5_features_15k'
-  result_dir: 'results_5_features_15k_128_harder'
+  result_dir: 'results_5_features_15k_128_last_last'
   n_train: 7000
   n_valid: 800
   batch_size: 1
   n_epochs: 150
   preprocess_dataset:
     filename: 'prepare_stats.csv'
-    edge_count_max: 20000
+    edge_count_max: 10000
     edge_count_min: 5
     node_count_min: 5
-    node_count_max: 25000
+    node_count_max: 15000
 
 model:
   name: 'gnn_segment_classifier'
