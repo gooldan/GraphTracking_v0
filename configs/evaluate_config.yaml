@@ -3,8 +3,8 @@ trainer:
     fake_weight: 2 # 0.5 / 0.9
 
 train:
-  input_dir: '../5_features_6k'
-  result_dir: '../results_5_features_15k_128_1_it'
+  input_dir: '../results/5_features_6k'
+  result_dir: '../results/result_colab_5features_15k_new'
   n_train: 16384
   n_valid: 1024
   batch_size: 20
@@ -20,7 +20,7 @@ model:
   name: 'gnn_segment_classifier'
   input_dim: 5
   hidden_dim: 128
-  n_iters: 1
+  n_iters: 2
   loss_func: 'binary_cross_entropy'
   optimizer: 'Adam'
   learning_rate: 0.001

@@ -15,7 +15,7 @@ import pandas as pd
 from datasets.graph import Graph, save_graphs_new, load_graph
 import time
 import sys
-
+import traceback
 import matplotlib.pyplot as plt
 
 def construct_output_graph(hits, edges, feature_names):
@@ -136,7 +136,8 @@ def prepare_events(base_cfg, config_prepare, events_df):
                 continue
             except KeyboardInterrupt:
                 break
-            except :
+            except Exception as e :
+                logging.info("ERROR ON %d event. Error: %s." % (id, traceback.format_exc()))
                 continue
             info_dict['event'].append(id)
             info_dict['reduce'].append(np.mean(reduce_t))
