@@ -140,6 +140,9 @@ class Visualizer:
 
     def draw_2d(self, ax):
         assert len(self.__nn_preds) == 0 and "Can not draw ellipses on 2d plot"
+        drop_fake_percent = 0
+        if self.__draw_cfg["drop_fake_percent"]:
+            drop_fake_percent = self.__draw_cfg["drop_fake_percent"]
         fig = plt.figure(figsize=(6, 6))
         if ax is None:
             ax = fig.add_subplot(111)
@@ -152,7 +155,7 @@ class Visualizer:
 
         if self.__draw_all_tracks_from_df:
             for adj_val in self.__adj_track_list:
-                col, lab, tr_id = self.draw_edge_2d(adj_val, ax, drop_fake_percent=0.8)
+                col, lab, tr_id = self.draw_edge_2d(adj_val, ax, drop_fake_percent=drop_fake_percent)
                 if int(tr_id) not in legends:
                     legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
@@ -162,7 +165,7 @@ class Visualizer:
                 legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for edge in self.__nx_edges:
-            col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=0.8)
+            col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=drop_fake_percent)
             if col is None:
                 continue
             if int(tr_id) not in legends:
@@ -175,7 +178,7 @@ class Visualizer:
             self.draw_edges_robust_2d_ex(ax)
 
         for edge in self.__nx_line_edges:
-            col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=0.8)
+            col, lab, tr_id = self.draw_edge_2d(edge, ax, drop_fake_percent=drop_fake_percent)
             if col is None:
                 continue
             if int(tr_id) not in legends:
@@ -208,12 +211,12 @@ class Visualizer:
 
     def draw_edges_from_nodes_2d(self, ax, nodes_from, nodes_to, color, pnt_color, z_line, z_dot, line_width ):
 
-        ax.scatter(nodes_from.x.values, nodes_from.station.values, c=pnt_color, marker='o', zorder=z_dot)
-        ax.scatter(nodes_to.x.values, nodes_to.station.values, c=pnt_color, marker='o')
+        ax.scatter(nodes_from.y.values, nodes_from.station.values, c=pnt_color, marker='o', zorder=z_dot)
+        ax.scatter(nodes_to.y.values, nodes_to.station.values, c=pnt_color, marker='o')
 
-        x0 = nodes_from[['x']].values
+        x0 = nodes_from[['y']].values
         y0 = nodes_from[['station']].values
-        x1 = nodes_to[['x']].values
+        x1 = nodes_to[['y']].values
         y1 = nodes_to[['station']].values
         lines = np.dstack((np.hstack((x0, x1)), np.hstack((y0, y1))))
         lk = LineCollection(lines, color=[color]*len(lines), linewidths=[line_width]*len(lines), zorder=z_line)
@@ -247,7 +250,7 @@ class Visualizer:
         hit_from = self.__df.loc[adj_val[0]]
         hit_to = self.__df.loc[adj_val[1]]
         if drop_fake_percent > 0:
-            if hit_from.track == -1 or hit_to.track == -1 and np.random.random_sample() < drop_fake_percent:
+            if (hit_from.track == -1) or (hit_to.track == -1) and (np.random.random_sample() < drop_fake_percent):
                 return None, None, None
         color, label, tr_id = self.generate_color_label_2d(int(hit_from.track), int(hit_to.track))
         marker_1 = 'h' if hit_from.track == -1 else 'o'
