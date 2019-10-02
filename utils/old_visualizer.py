@@ -109,13 +109,13 @@ class Visualizer:
             for adj_val in self.__adj_track_list:
                 col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
                 if int(tr_id) not in legends:
-                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
-                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
 
         for adj_val in self.__reco_adj_list:
             col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
 
         for ell_data in self.__nn_preds:
             ell = Ellipse(xy=ell_data[2], width=ell_data[3][0], height=ell_data[3][1], color='red')
@@ -124,7 +124,7 @@ class Visualizer:
             col, lab, tr_id = self.draw_edge_3d_from_idx_to_pnt(ell_data[1], [ell_data[0], ell_data[2][0], ell_data[2][1]],
                                                              ax)
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
 
         for station_id, coord_planes in enumerate(self.__coord_planes):
             for rect_data in coord_planes:
