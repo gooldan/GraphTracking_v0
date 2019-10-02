@@ -109,13 +109,13 @@ class Visualizer:
             for adj_val in self.__adj_track_list:
                 col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
                 if int(tr_id) not in legends:
-                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
-                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for adj_val in self.__reco_adj_list:
             col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for ell_data in self.__nn_preds:
             ell = Ellipse(xy=ell_data[2], width=ell_data[3][0], height=ell_data[3][1], color='red')
@@ -124,7 +124,7 @@ class Visualizer:
             col, lab, tr_id = self.draw_edge_3d_from_idx_to_pnt(ell_data[1], [ell_data[0], ell_data[2][0], ell_data[2][1]],
                                                              ax)
             if int(tr_id) not in legends:
-                legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
 
         for station_id, coord_planes in enumerate(self.__coord_planes):
             for rect_data in coord_planes:
@@ -240,7 +240,7 @@ class Visualizer:
         color, label, tr_id = self.generate_color_label_3d(int(hit_from.track), int(hit_to.track))
         marker_1 = 'h' if hit_from.track == -1 else 'o'
         marker_2 = 'h' if hit_to.track == -1 else 'o'
-        ax.plot((hit_from.station, hit_to.station), (hit_from.x, hit_to.x), zs=(hit_from.y, hit_to.y), c=color)
+        ax.plot((hit_from.station, hit_to.station), (hit_from.x, hit_to.x), zs=(hit_from.y, hit_to.y), c=color[0])
         if self.__draw_cfg['draw_scatters_for_tracks']:
             ax.scatter(hit_from.station, hit_from.x, hit_from.y, c=self.__color_map[int(hit_from.track)], marker=marker_1)
             ax.scatter(hit_to.station, hit_to.x, hit_to.y, c=self.__color_map[int(hit_to.track)], marker=marker_2)
@@ -280,12 +280,10 @@ class Visualizer:
 
     def generate_color_label_3d(self, tr_id_from, tr_id_to, use_bad_conn=True):
         if tr_id_from not in self.__color_map:
-            self.__color_map[tr_id_from] = np.random.rand(3,)
+            self.__color_map[tr_id_from] = np.array(np.append(np.random.rand(3,),1)).reshape((1,4))
         if tr_id_to not in self.__color_map:
-            self.__color_map[tr_id_to] = np.random.rand(3,)
-        if tr_id_from != tr_id_to:
-            return (1, 0.1, 0.1), 'bad connection', tr_id_from<<16|tr_id_to
-        if tr_id_from == -1:
+            self.__color_map[tr_id_to] = np.array(np.append(np.random.rand(3,),1)).reshape((1,4))
+        if tr_id_from != tr_id_to or tr_id_from == -1:
             return (0.1, 0.1, 0.1), 'fake connection', -1
         return self.__color_map[tr_id_from], 'tr_id: ' + str(int(tr_id_from)), tr_id_from
 
