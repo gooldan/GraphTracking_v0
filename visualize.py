@@ -5,6 +5,7 @@ from utils.graph import to_nx_graph, to_line_graph, get_weight_stats, \
     get_linegraph_superedges_stat, to_pandas_graph_df, get_linegraph_stats_from_pandas, \
     get_reduced_df_graph, get_pd_line_graph, run_mbt_graph
 
+from prepare import construct_output_graph
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,10 +33,11 @@ if __name__ == '__main__':
         return apply_node_restriction(df, [-0.15, 0.25], [-0.3, 0.22])
 
     for id, event in events_df.groupby('event'):
-        vis = Visualizer(event, cfg['visualize'], title='EVENT LINEGRAPH', random_seed=14)
+        vis = Visualizer(event, cfg['visualize'], title='EVENT GRAPH', random_seed=14)
         vis.init_draw(draw_all_hits=True, draw_all_tracks_from_df=True)
         #vis.add_edges_data(edges_filtered)
         vis.draw(show=True)
+        exit()
         G = to_pandas_graph_df(event)
         lg_nodes_t, lg_edges_t, mean_purity_t, mean_reduce_t = get_pd_line_graph(G,
                                                                                  with_station_info=True,
@@ -44,6 +46,10 @@ if __name__ == '__main__':
 
         like_original_df = get_like_hitgraph_from_linegraph(lg_nodes_t)
         edges_filtered = apply_edge_restriction(lg_edges_t, 0.09)
+
+        output_graph = construct_output_graph(lg_nodes_t, edges_filtered, ['x_p', 'x_c', 'y_p', 'y_c', 'z'])
+
+
 
         print(len(lg_edges_t))
         print(len(edges_filtered))

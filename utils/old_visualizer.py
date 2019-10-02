@@ -209,14 +209,14 @@ class Visualizer:
         self.draw_edges_from_nodes_2d(ax, nodes_from_true, nodes_to_true, 'orange',  [0.1, 0.1, 0.1, 1],
                                       self.Z_ORDER_TRUE_EDGE, self.Z_ORDER_TRUE_HIT, 2)
 
-    def draw_edges_from_nodes_2d(self, ax, nodes_from, nodes_to, color, pnt_color, z_line, z_dot, line_width ):
+    def draw_edges_from_nodes_2d(self, ax, nodes_from, nodes_to, color, pnt_color, z_line, z_dot, line_width, label='y', size=10):
 
-        ax.scatter(nodes_from.y.values, nodes_from.station.values, c=pnt_color, marker='o', zorder=z_dot)
-        ax.scatter(nodes_to.y.values, nodes_to.station.values, c=pnt_color, marker='o')
+        ax.scatter(nodes_from[label].values, nodes_from.station.values, c=pnt_color, marker='o', zorder=z_dot, s=[size]*len(nodes_from))
+        ax.scatter(nodes_to[label].values, nodes_to.station.values, c=pnt_color, marker='o', s=[size]*len(nodes_from))
 
-        x0 = nodes_from[['y']].values
+        x0 = nodes_from[[label]].values
         y0 = nodes_from[['station']].values
-        x1 = nodes_to[['y']].values
+        x1 = nodes_to[[label]].values
         y1 = nodes_to[['station']].values
         lines = np.dstack((np.hstack((x0, x1)), np.hstack((y0, y1))))
         lk = LineCollection(lines, color=[color]*len(lines), linewidths=[line_width]*len(lines), zorder=z_line)
