@@ -99,13 +99,11 @@ def dropBroken(df, preserve_fakes, drop_full_tracks):
     return ret
 
 def parse_df(config_df):
-    df_path = config_df['df_path']
-    if config_df['read_only_first_lines']:
-        nrows = config_df['read_only_first_lines']
-        return pd.read_csv(df_path, encoding='utf-8', sep='\t', nrows=nrows)
-    return pd.read_csv(df_path, encoding='utf-8', sep='\t')
+    parse_args = config_df['parse']['args']
+    return pd.read_csv(**parse_args)
 
 def get_events_df(config_df, hits_df, preserve_fakes=True, drop_full_tracks=False):
+
     eventIdsArr = config_df['event_ids']
 
     def parseSingleArrArg(arrArg):

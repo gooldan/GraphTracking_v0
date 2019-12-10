@@ -30,6 +30,7 @@ class Visualizer:
     def __init__(self, df, cfg, title = "EVENT GRAPH", random_seed=13):
         np.random.seed(random_seed)
         self.__df = df
+        self.__dimen_coord = cfg['dimen_coord']
         self.__draw_cfg = cfg
         self.__axs = []
         self.__color_map = {-1: np.array([[0.1, 0.1, 0.1, 1.]])}
@@ -53,11 +54,11 @@ class Visualizer:
         # prepare adjacency list for tracks
         for i, gp in grouped:
             if gp.track.values[0] == -1:
-                self.__fake_hits = np.append(self.__fake_hits, gp[['station', 'x', 'y']].values, axis=0)
+                self.__fake_hits = np.append(self.__fake_hits, gp[[self.__dimen_coord, 'x', 'y']].values, axis=0)
                 continue
 
             if not self.__draw_cfg['draw_scatters_for_tracks']:
-                self.__fake_hits = np.append(self.__fake_hits, gp[['station', 'x', 'y']].values, axis=0)
+                self.__fake_hits = np.append(self.__fake_hits, gp[[self.__dimen_coord, 'x', 'y']].values, axis=0)
 
             for row in range(1, len(gp.index)):
                 elem = (gp.index[row - 1], gp.index[row], 1)
@@ -98,7 +99,7 @@ class Visualizer:
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection='3d')
         ax.set_title(self.__title)
-        ax.set_xlabel('Station')
+        ax.set_xlabel(self.__dimen_coord)
         ax.set_ylabel('X')
         ax.set_zlabel('Y')
         legends = {}
@@ -109,8 +110,8 @@ class Visualizer:
             for adj_val in self.__adj_track_list:
                 col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
                 if int(tr_id) not in legends:
-                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
-                    legends[int(tr_id)] = mpatches.Patch(color=col[0], label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
+                    legends[int(tr_id)] = mpatches.Patch(color=col, label=lab)
 
         for adj_val in self.__reco_adj_list:
             col, lab, tr_id = self.draw_edge_3d(adj_val, ax)
@@ -145,7 +146,7 @@ class Visualizer:
             ax = fig.add_subplot(111)
         ax.set_title(self.__title)
         ax.set_xlabel('X')
-        ax.set_ylabel('Station')
+        ax.set_ylabel(self.__dimen_coord)
         legends = {}
         if self.__draw_all_hits:
             ax.scatter(self.__fake_hits[:,1], self.__fake_hits[:,0], c=self.__color_map[-1], marker='o')
@@ -208,13 +209,13 @@ class Visualizer:
 
     def draw_edges_from_nodes_2d(self, ax, nodes_from, nodes_to, color, pnt_color, z_line, z_dot, line_width ):
 
-        ax.scatter(nodes_from.x.values, nodes_from.station.values, c=pnt_color, marker='o', zorder=z_dot)
-        ax.scatter(nodes_to.x.values, nodes_to.station.values, c=pnt_color, marker='o')
+        ax.scatter(nodes_from.x.values, nodes_from[self.__dimen_coord].values, c=pnt_color, marker='o', zorder=z_dot)
+        ax.scatter(nodes_to.x.values, nodes_to[self.__dimen_coord].values, c=pnt_color, marker='o')
 
         x0 = nodes_from[['x']].values
-        y0 = nodes_from[['station']].values
+        y0 = nodes_from[[self.__dimen_coord]].values
         x1 = nodes_to[['x']].values
-        y1 = nodes_to[['station']].values
+        y1 = nodes_to[[self.__dimen_coord]].values
         lines = np.dstack((np.hstack((x0, x1)), np.hstack((y0, y1))))
         lk = LineCollection(lines, color=[color]*len(lines), linewidths=[line_width]*len(lines), zorder=z_line)
         ax.add_collection(lk)
@@ -237,10 +238,10 @@ class Visualizer:
         color, label, tr_id = self.generate_color_label_3d(int(hit_from.track), int(hit_to.track))
         marker_1 = 'h' if hit_from.track == -1 else 'o'
         marker_2 = 'h' if hit_to.track == -1 else 'o'
-        ax.plot((hit_from.station, hit_to.station), (hit_from.x, hit_to.x), zs=(hit_from.y, hit_to.y), c=color)
+        ax.plot((hit_from[self.__dimen_coord], hit_to[self.__dimen_coord]), (hit_from.x, hit_to.x), zs=(hit_from.y, hit_to.y), c=color)
         if self.__draw_cfg['draw_scatters_for_tracks']:
-            ax.scatter(hit_from.station, hit_from.x, hit_from.y, c=self.__color_map[int(hit_from.track)], marker=marker_1)
-            ax.scatter(hit_to.station, hit_to.x, hit_to.y, c=self.__color_map[int(hit_to.track)], marker=marker_2)
+            ax.scatter(hit_from[self.__dimen_coord], hit_from.x, hit_from.y, c=self.__color_map[int(hit_from.track)], marker=marker_1)
+            ax.scatter(hit_to[self.__dimen_coord], hit_to.x, hit_to.y, c=self.__color_map[int(hit_to.track)], marker=marker_2)
         return color, label, tr_id
 
     def draw_edge_2d(self, adj_val, ax, drop_fake_percent=0.):
@@ -254,10 +255,10 @@ class Visualizer:
         marker_2 = 'h' if hit_to.track == -1 else 'o'
         zorder_edge = Visualizer.Z_ORDER_TRUE_EDGE if tr_id != -1 else Visualizer.Z_ORDER_FAKE_EDGE
         zorder_hit = Visualizer.Z_ORDER_TRUE_HIT if tr_id != -1 else Visualizer.Z_ORDER_FAKE_HIT
-        ax.plot((hit_from.x, hit_to.x), (hit_from.station, hit_to.station), c=color[0], zorder=zorder_edge)
+        ax.plot((hit_from.x, hit_to.x), (hit_from[self.__dimen_coord], hit_to[self.__dimen_coord]), c=color[0], zorder=zorder_edge)
         if self.__draw_cfg['draw_scatters_for_tracks']:
-            ax.scatter(hit_from.x, hit_from.station, c=self.__color_map[int(hit_from.track)], marker=marker_1, zorder=zorder_hit)
-            ax.scatter(hit_to.x, hit_to.station, c=self.__color_map[int(hit_to.track)], marker=marker_2, zorder=zorder_hit)
+            ax.scatter(hit_from.x, hit_from[self.__dimen_coord], c=self.__color_map[int(hit_from.track)], marker=marker_1, zorder=zorder_hit)
+            ax.scatter(hit_to.x, hit_to[self.__dimen_coord], c=self.__color_map[int(hit_to.track)], marker=marker_2, zorder=zorder_hit)
         return color, label, tr_id
 
     def draw_edge_3d_from_idx_to_pnt(self, from_idx,
@@ -266,7 +267,7 @@ class Visualizer:
                                   marker='h',
                                   pnt_color='yellow'):
         hit_from = self.__df.loc[from_idx]
-        ax.plot((hit_from.station, to_coord_STATXY[0]), (hit_from.x, to_coord_STATXY[1]),
+        ax.plot((hit_from[self.__dimen_coord], to_coord_STATXY[0]), (hit_from.x, to_coord_STATXY[1]),
                 zs=(hit_from.y, to_coord_STATXY[2]), c=line_color)
         ax.scatter(to_coord_STATXY[0], to_coord_STATXY[1], to_coord_STATXY[2],
                    c=pnt_color, marker=marker)

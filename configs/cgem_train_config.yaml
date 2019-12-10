@@ -1,0 +1,21 @@
+trainer:
+    real_weight: 3.0   # 0.5 / 0.1
+    fake_weight: 0.1555 # 0.5 / 0.9
+
+train:
+  input_dir: 'cgem_first_try'
+  result_dir: 'cgem_result_first'
+  n_train: 1000
+  n_valid: 500
+  batch_size: 1
+  n_epochs: 32
+  preprocess_dataset:
+
+model:
+  name: 'gnn_segment_classifier'
+  input_dim: 3
+  hidden_dim: 64
+  n_iters: 2
+  loss_func: 'binary_cross_entropy'
+  optimizer: 'Adam'
+  learning_rate: 0.001

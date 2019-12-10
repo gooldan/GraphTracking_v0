@@ -1,0 +1,43 @@
+# basic visualization of network run on one event
+
+
+df:
+  parse:
+    args:
+      sep: '\s+'
+      encoding: 'utf-8'
+      nrows: 1000000
+      filepath_or_buffer: 'data_cgem/200.txt'
+      names: ['event',  'x', 'y', 'z', 'station', 'track']
+
+  take:
+    event_ids: ['1878'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
+
+    drop_broken_tracks: False # __UNUSED__ drop tracks with the gaps or which does not start at station #0
+    convert_to_polar: False # __UNUSED__
+    normalize: False # __UNUSED__
+#  stations_sizes: [
+#    [[-1.5, -4.5, 66, 41]],
+#    [[-1.5, -4.5, 66, 41]],
+#    [[-1.5, -4.5, 66, 41]],
+#      # module 0, module 1 FIXED RECTS ON STATION 5 and 6
+#    [[27.7, -4.5, 66, 41], [-34.7, -4.3, 66, 41]],
+#    [[40.8, -6.9, 81.6, 45], [-40.8, -6.9, 81.6, 45]],
+#    [[40.8, -6.9, 81.6, 45], [-40.8, -6.9, 81.6, 45]]
+#  ]
+#  z_stations: [32.85, 65.25, 96.65, 129.35, 161.25, 193.85]
+
+visualize:
+  draw_scatters_for_tracks: True
+  mode: '3d' # '2d'
+  dimen_coord: 'z' #station
+#  ellipses: True
+#
+#network: #False
+#  network_path: "results/no_vtx_tracknetV2_seed{13}_batch{32}_epoch{27}_loss{1.7983}_acc{0.8842}_circle{3.3569}.h5"
+
+
+
+
+#with_vertex: False
+
