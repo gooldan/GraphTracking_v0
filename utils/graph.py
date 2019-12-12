@@ -24,15 +24,21 @@ def nodes_info_default(df_from, G):
     G.add_nodes_from(df_from[['x','y', 'track']].to_dict(orient='index').items())
     return G
 
-def to_pandas_graph_df(single_event_df, weight_func=weight_func_default, dist_tuple=dist_tuple_default):
+def to_pandas_graph_df(single_event_df, weight_func=weight_func_default, dist_tuple=dist_tuple_default, suffx=None, compute_is_true_track=False):
+    if suffx is None:
+        suffx = ('_prev','_current')
     assert single_event_df.event.nunique() == 1
     my_df = single_event_df.copy()
     my_df['index_old'] = my_df.index
     by_stations = [df for (ind, df) in my_df.groupby('station')]
     cartesian_product = pd.DataFrame()
     for i in range(1, len(by_stations)):
-        cartesian_product = cartesian_product.append(pd.merge(by_stations[i - 1], by_stations[i], on='event', suffixes=('_prev','_current')),
+        cartesian_product = cartesian_product.append(pd.merge(by_stations[i - 1], by_stations[i], on='event', suffixes=suffx),
                                                      ignore_index=True, sort=False)
+    if compute_is_true_track:
+        pid1 = cartesian_product["track" + suffx[0]].values
+        pid2 = cartesian_product["track" + suffx[1]].values
+        cartesian_product['track'] = ((pid1 == pid2) & (pid1 != -1))
     return cartesian_product
 
 def to_nx_graph(single_event_df, weight_func=weight_func_default, dist_tuple=dist_tuple_default):

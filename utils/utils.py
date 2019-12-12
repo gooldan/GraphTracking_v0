@@ -28,10 +28,10 @@ def apply_edge_restriction(pd_edges_df, RESTRICTION=0.15):
     assert 'weight' in pd_edges_df
     return pd_edges_df[pd_edges_df.weight < RESTRICTION]
 
-def calc_purity_reduce_factor(df_full, df_filtered):
-    assert 'true_superedge' in df_full and 'true_superedge' in df_filtered
+def calc_purity_reduce_factor(df_full, df_filtered, true_label = 'true_superedge', cmp_with=-1):
+    assert true_label in df_full and true_label in df_filtered
 
-    return len(df_filtered[df_filtered.true_superedge != -1]) / len(df_full[df_full.true_superedge != -1]), len(df_full) / len(df_filtered)
+    return len(df_filtered[df_filtered[true_label] != cmp_with]) / len(df_full[df_full[true_label] != cmp_with]), len(df_full) / len(df_filtered)
 
 def get_stations_constraints(df, stations_sizes):
     x_min_max = [-1, 1]
@@ -59,10 +59,11 @@ def get_stations_constraints(df, stations_sizes):
            df.z.min() > z_min_max[0] and df.z.max() < z_min_max[1]
     return x_min_max, y_min_max, z_min_max
 
-def normalize_convert_to_r_phi_z(df, stations_sizes, convert_to_polar=False):
-
-    x_min_max, y_min_max, z_min_max = get_stations_constraints(df, stations_sizes)
-
+def normalize_convert_to_r_phi_z(df, stations_sizes, convert_to_polar=False, drop_old=False):
+    if 'cgem' in stations_sizes:
+        x_min_max, y_min_max, z_min_max = stations_sizes['cgem']['x_minmax'], stations_sizes['cgem']['y_minmax'], stations_sizes['cgem']['z_minmax']
+    else:
+        x_min_max, y_min_max, z_min_max = get_stations_constraints(df, stations_sizes)
     x_min, x_max = x_min_max
     y_min, y_max = y_min_max
     z_min, z_max = z_min_max
@@ -78,7 +79,12 @@ def normalize_convert_to_r_phi_z(df, stations_sizes, convert_to_polar=False):
         df = df.assign(r=r, phi=phi, z=df.z)
     else:
         df = df.assign(x=x_norm, y=y_norm, z=z_norm)
-
+    if drop_old:
+        del df['x_old']
+        del df['y_old']
+        del df['z_old']
+        del df['x']
+        del df['y']
     return df
 
 def dropBroken(df, preserve_fakes, drop_full_tracks):
@@ -119,6 +125,9 @@ def get_events_df(config_df, hits_df, preserve_fakes=True, drop_full_tracks=Fals
     for elem in eventIdsArr:
         toAppend, is_all = parseSingleArrArg(elem)
         if is_all:
+            if config_df['drop_broken_tracks'] or config_df['convert_to_polar'] or config_df['normalize']:
+                res = hits_df.index
+                break
             return hits_df
         res = np.append(res, toAppend)
 
@@ -130,7 +139,9 @@ def get_events_df(config_df, hits_df, preserve_fakes=True, drop_full_tracks=Fals
     else:
         assert preserve_fakes and not drop_full_tracks and "Error, you are not dropping broken but attempting to 'drop_full_tracks' or 'preserve_fakes'"
     if config_df['convert_to_polar'] or config_df['normalize']:
-        hits = normalize_convert_to_r_phi_z(hits, config_df['stations_sizes'], config_df['convert_to_polar'])
+        hits = normalize_convert_to_r_phi_z(hits, config_df['stations_sizes'],
+                                            config_df['convert_to_polar'],
+                                            config_df['normalize'] and config_df['normalize']['drop_old'])
         pass
     return hits
 
