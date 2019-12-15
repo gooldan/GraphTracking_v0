@@ -4,10 +4,10 @@
 
 from utils.old_visualizer import Visualizer, draw_single
 from utils.config_reader import ConfigReader
-from utils.utils import get_events_df, parse_df, calc_purity_reduce_factor, apply_edge_restriction, apply_node_restriction
+from utils.utils import get_events_df, parse_df, calc_purity_reduce_factor, apply_edge_restriction, apply_node_restriction, apply_segments_restriction
 from utils.graph import to_nx_graph, to_line_graph, get_weight_stats, \
     get_linegraph_superedges_stat, to_pandas_graph_df, get_linegraph_stats_from_pandas, \
-    get_reduced_df_graph, get_pd_line_graph, run_mbt_graph
+    get_reduced_df_graph, get_pd_line_graph, run_mbt_graph, calc_dphi
 import os
 import logging
 import numpy as np
@@ -19,11 +19,11 @@ import sys
 import matplotlib.pyplot as plt
 
 
-def construct_output_graph(hits, edges, feature_names, index_label_prev='edge_index_p', index_label_current='edge_index_c'):
+def construct_output_graph(hits, edges, feature_names, feature_scale, index_label_prev='edge_index_p', index_label_current='edge_index_c'):
     # Prepare the graph matrices
     n_hits = hits.shape[0]
     n_edges = edges.shape[0]
-    X = (hits[feature_names].values).astype(np.float32)
+    X = (hits[feature_names].values / feature_scale).astype(np.float32)
     Ri = np.zeros((n_hits, n_edges), dtype=np.float32)
     Ro = np.zeros((n_hits, n_edges), dtype=np.float32)
     y = np.zeros(n_edges, dtype=np.float32)
@@ -77,7 +77,7 @@ def draw_graph_result(G = None, graph_path = None):
     else:
         assert False and "Nothing to draw"
 
-    draw_single(X, Ri, Ro, y, c_fake = (0,0,0,0.0), xcord1=(0, 'x'), xcord2=(1, 'y'), ycord=(2, 'z'))
+    draw_single(X, Ri, Ro, y, c_fake = (0,0,0,0.1), xcord1=(2, 'z'), xcord2=(1, 'phi'), ycord=(0, 'r'))
 
 def prepare_events(base_cfg, config_prepare, events_df):
     os.makedirs(config_prepare['output_dir'], exist_ok=True)
@@ -202,22 +202,43 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
         logging.info("Processing event #%09d ...." % id)
         console_write('\r Processing event #%09d ....' % id)
         try:
-            G = to_pandas_graph_df(event)
-            out = construct_output_graph(event, G, ['x', 'y', 'z'], 'index_old_prev', 'index_old_current')
-            save_graphs_new([(out, (output_dir + '/graph_%d' % (id)))])
+            G = to_pandas_graph_df(event, suffx=['_p', '_c'], compute_is_true_track=True)
+            G['dz'] = G.z_c.values - G.z_p.values
+            G['dr'] = G.r_c.values - G.r_p.values
+            G['dphi'] = calc_dphi(G.phi_p.values, G.phi_c.values)
+
+            dphi_min, dphi_max = config_prepare['dphi_minmax']
+            dz_min, dz_max = config_prepare['dz_minmax']
+            g_filtered = apply_segments_restriction(G, dphi_min=dphi_min, dphi_max=dphi_max, dz_min=dz_min, dz_max=dz_max)
+
+            count_true = len(g_filtered[g_filtered.track])
+            if count_true == 0:
+                purity_, reduce_ = (1, 0)
+            else:
+                purity_, reduce_ = calc_purity_reduce_factor(G, g_filtered, 'track', False)
+            info_dict['reduce'].append(reduce_)
+            info_dict['purity'].append(purity_)
+
+            out = construct_output_graph(event, g_filtered, ['r', 'phi', 'z'], [1., np.pi, 1.], 'index_old_p', 'index_old_c')
+
+
             info_dict['node_count'].append(len(event))
-            info_dict['edge_count'].append(len(G))
-            count_true = len(G[(G.track_prev != -1) & (G.track_prev == G.track_current)])
+            info_dict['edge_count'].append(len(g_filtered))
             count_true = count_true if count_true > 0 else 1
-            info_dict['edge_factor'].append((len(G) - count_true) / count_true )
-            #draw_graph_result(out)
+            info_dict['edge_factor'].append((len(g_filtered) - count_true) / count_true )
+            # draw_graph_result(out)
+            # exit()
         except MemoryError:
             logging.info("MEMORY ERROR ON %d event" % id)
             console_write('\n\n mem error event %d \n\n' % id)
             continue
         except KeyboardInterrupt:
             break
-
+        except KeyError:
+            logging.info("KEY ERROR ON %d event" % id)
+            console_write('\n\n key error event %d \n\n' % id)
+            continue
+        save_graphs_new([(out, (output_dir + '/graph_%d' % (id)))])
         # except Exception as ex:
         #     logging.error(ex)
         #     console_write('\nexception!! event=%d\n' % id)
@@ -232,6 +253,7 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
     logging.info("=" * 20)
     logging.info("Processing done.")
     logging.info("Total processed %d events. Mean node count: %.6f; Mean segments count: %.6f" % (count, np.mean(info_dict['node_count']), np.mean(info_dict['edge_count'])))
+    logging.info("After filtration mean purity is %.6f and reduce factor is %.6f." % (np.mean(info_dict['purity']), np.mean(info_dict['reduce'])))
     logging.info("Speed is %.3f events per second" % (count / result_time))
     logging.info("Fake edge ratio is %.6f" % np.mean(info_dict['edge_factor']))
 

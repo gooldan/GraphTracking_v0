@@ -8,6 +8,14 @@ def apply_node_restriction(pd_nodes_df, min_max_dx, min_max_dy):
     ret = ret[(ret.dy > min_max_dy[0]) & (ret.dy < min_max_dy[1])]
     return ret
 
+def apply_segments_restriction(segments, dphi_min, dphi_max, dz_min, dz_max):
+    assert 'dphi' in segments and 'dz' in segments
+    return segments[
+        (segments.dphi > dphi_min) & (segments.dphi < dphi_max) &
+        (segments.dz > dz_min) & (segments.dz < dz_max)
+        ]
+
+
 def to_pandas_edgelist(G, source='source', target='target', nodelist=None,
                        dtype=None, order=None):
     import pandas as pd

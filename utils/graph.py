@@ -278,6 +278,11 @@ def get_reduced_df_graph(pd_graph, hit_event_graph, get_bars_info = True):
         return weights_true, weights_false, res_df
     return res_df
 
+def calc_dphi(phi1, phi2):
+    dphi = phi2 - phi1
+    dphi[dphi > np.pi] -= 2*np.pi
+    dphi[dphi < -np.pi] += 2*np.pi
+    return dphi
 
 
 def get_weight_stats(nx_di_graph):

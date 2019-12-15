@@ -11,7 +11,7 @@ df:
       names: ['event',  'x', 'y', 'z', 'station', 'track']
 
   take:
-    event_ids: ['1878'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
+    event_ids: ['3426'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
 
     drop_broken_tracks: False # __UNUSED__ drop tracks with the gaps or which does not start at station #0
     convert_to_polar: False # __UNUSED__
