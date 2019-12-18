@@ -3,11 +3,12 @@ from utils.config_reader import ConfigReader
 from utils.utils import get_events_df, parse_df, calc_purity_reduce_factor, apply_edge_restriction, apply_node_restriction
 from utils.graph import to_nx_graph, to_line_graph, get_weight_stats, \
     get_linegraph_superedges_stat, to_pandas_graph_df, get_linegraph_stats_from_pandas, \
-    get_reduced_df_graph, get_pd_line_graph, run_mbt_graph
+    get_reduced_df_graph, get_pd_line_graph, run_mbt_graph, calc_dphi
 
 
 import matplotlib.pyplot as plt
 import numpy as np
+import networkx as nx
 def get_like_hitgraph_from_linegraph(df):
     df = df.rename(columns={'dx':'x', 'dy':'y', 'dz':'z'})
     return df
@@ -44,6 +45,54 @@ if __name__ == '__main__':
         return apply_node_restriction(df, [-50, 50], [-50, 50])
 
     for id, event in events_df.groupby('event'):
+
+        G = to_pandas_graph_df(event, suffx=['_p', '_c'], compute_is_true_track=True)
+        G['dz'] = G.z_c.values - G.z_p.values
+        G['dr'] = G.r_c.values - G.r_p.values
+        G['dphi'] = calc_dphi(G.phi_p.values, G.phi_c.values)/np.pi
+        G['weight'] = 1. / np.linalg.norm(G[['dz', 'dphi']].values, axis=1)
+        G['edge_index'] = G.index
+        nx_G = nx.from_pandas_edgelist(G, 'index_old_p', 'index_old_c', ['weight', 'edge_index'], create_using=nx.DiGraph())
+
+        br = nx.algorithms.tree.maximum_branching(nx_G, preserve_attrs=True)
+        reduced = nx.to_pandas_edgelist(br)
+        reduced_G = G.loc[reduced.edge_index].copy().reset_index(drop=True)
+
+
+        vis = Visualizer(event, cfg['visualize'], title='BES EVENT', random_seed=14)
+        vis.init_draw(draw_all_hits=True, draw_all_tracks_from_df=True)
+        vis.draw(show=False)
+
+
+        vis1 = Visualizer(event, cfg['visualize'], title='EVENT GRAPH', random_seed=14)
+        vis1.init_draw(draw_all_hits=False, draw_all_tracks_from_df=False)
+        ax = vis1.draw_2d(None)
+
+
+        edges_true = reduced_G[reduced_G.track]
+        edges_false = reduced_G[reduced_G.track != True]
+
+        def drop_postfix(df, postfix):
+            return df.rename(lambda name: name[:name.index(postfix) if postfix in name else len(name)], axis='columns')
+
+        n_from_true = drop_postfix(edges_true[['r_p', 'phi_p', 'z_p', 'track_p']], '_p')
+        n_from_false = drop_postfix(edges_false[['r_p', 'phi_p', 'z_p', 'track_p']], '_p')
+
+        n_to_true = drop_postfix(edges_true[['r_c', 'phi_c', 'z_c', 'track_c']], '_c')
+        n_to_false = drop_postfix(edges_false[['r_c', 'phi_c', 'z_c', 'track_c']], '_c')
+
+        vis1.draw_edges_from_nodes_2d(ax, n_from_false, n_to_false,
+                                      color=[0.2, 0.2, 0.2, 0.5], pnt_color=[0.2, 0.2, 0.2, 0.5],
+                                      z_line=3, z_dot=5, line_width=2)
+
+        vis1.draw_edges_from_nodes_2d(ax, n_from_true, n_to_true, 'orange',
+                                      pnt_color=[0.2, 0.8, 0.2, 1.0], z_line=6,
+                                      z_dot=10, line_width=2)
+        plt.show()
+        print(reduced)
+
+        exit()
+
         vis = Visualizer(event, cfg['visualize'], title='BES EVENT', random_seed=14)
         vis.init_draw(draw_all_hits=True, draw_all_tracks_from_df=True)
         # # #vis.add_edges_data(edges_filtered)

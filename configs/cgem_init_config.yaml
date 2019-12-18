@@ -6,16 +6,22 @@ df:
     args:
       sep: '\s+'
       encoding: 'utf-8'
-      nrows: 1000000
+      nrows: 10000
       filepath_or_buffer: 'data_cgem/200.txt'
       names: ['event',  'x', 'y', 'z', 'station', 'track']
 
   take:
-    event_ids: ['3426'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
+    event_ids: ['0'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
 
     drop_broken_tracks: False # __UNUSED__ drop tracks with the gaps or which does not start at station #0
-    convert_to_polar: False # __UNUSED__
-    normalize: False # __UNUSED__
+    convert_to_polar: True
+    normalize:
+      drop_old: True
+    stations_sizes:
+      cgem:
+        x_minmax: [-166.6, 166.6]
+        y_minmax: [-166.6, 166.6]
+        z_minmax: [-423.5, 423.5]
 #  stations_sizes: [
 #    [[-1.5, -4.5, 66, 41]],
 #    [[-1.5, -4.5, 66, 41]],
@@ -29,8 +35,12 @@ df:
 
 visualize:
   draw_scatters_for_tracks: True
-  mode: '3d' # '2d'
-  dimen_coord: 'z' #station
+  mode: '2d' # '2d'
+
+  x_coord: 'z' #x
+  y_coord: 'phi' #y
+  z_coord: 'r' #station
+
 #  ellipses: True
 #
 #network: #False

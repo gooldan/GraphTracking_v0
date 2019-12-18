@@ -12,6 +12,7 @@ import os
 import logging
 import numpy as np
 import pandas as pd
+import networkx as nx
 from datasets.graph import Graph, save_graphs_new, load_graph
 import time
 import sys
@@ -209,23 +210,33 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
 
             dphi_min, dphi_max = config_prepare['dphi_minmax']
             dz_min, dz_max = config_prepare['dz_minmax']
-            g_filtered = apply_segments_restriction(G, dphi_min=dphi_min, dphi_max=dphi_max, dz_min=dz_min, dz_max=dz_max)
+            g_filtered = apply_segments_restriction(G, dphi_min=dphi_min, dphi_max=dphi_max, dz_min=dz_min, dz_max=dz_max).copy()
 
-            count_true = len(g_filtered[g_filtered.track])
+            g_filtered['weight'] = 1. / np.linalg.norm(g_filtered[['dz', 'dphi']].values, axis=1)
+            g_filtered['edge_index'] = g_filtered.index
+            nx_G = nx.from_pandas_edgelist(g_filtered, 'index_old_p', 'index_old_c', ['weight', 'edge_index'],
+                                           create_using=nx.DiGraph())
+
+            br = nx.algorithms.tree.maximum_branching(nx_G, preserve_attrs=True)
+            reduced = nx.to_pandas_edgelist(br)
+            reduced_G_filtered = g_filtered.loc[reduced.edge_index].copy().reset_index(drop=True)
+
+
+            count_true = len(reduced_G_filtered[reduced_G_filtered.track])
             if count_true == 0:
                 purity_, reduce_ = (1, 0)
             else:
-                purity_, reduce_ = calc_purity_reduce_factor(G, g_filtered, 'track', False)
+                purity_, reduce_ = calc_purity_reduce_factor(G, reduced_G_filtered, 'track', False)
             info_dict['reduce'].append(reduce_)
             info_dict['purity'].append(purity_)
 
-            out = construct_output_graph(event, g_filtered, ['r', 'phi', 'z'], [1., np.pi, 1.], 'index_old_p', 'index_old_c')
+            out = construct_output_graph(event, reduced_G_filtered, ['r', 'phi', 'z'], [1., np.pi, 1.], 'index_old_p', 'index_old_c')
 
 
             info_dict['node_count'].append(len(event))
-            info_dict['edge_count'].append(len(g_filtered))
+            info_dict['edge_count'].append(len(reduced_G_filtered))
             count_true = count_true if count_true > 0 else 1
-            info_dict['edge_factor'].append((len(g_filtered) - count_true) / count_true )
+            info_dict['edge_factor'].append((len(reduced_G_filtered) - count_true) / count_true )
             # draw_graph_result(out)
             # exit()
         except MemoryError:
@@ -258,6 +269,9 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
     logging.info("Fake edge ratio is %.6f" % np.mean(info_dict['edge_factor']))
 
 if __name__ == '__main__':
+
+    # draw_graph_result(graph_path="output/cgem_6k/graph_4037.npz")
+    # exit()
     reader = ConfigReader("configs/cgem_prepare_config.yaml")
     cfg = reader.cfg
     df = parse_df(cfg['df'])
