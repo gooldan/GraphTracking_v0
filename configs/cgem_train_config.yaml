@@ -1,21 +1,21 @@
 trainer:
-    real_weight: 2   # 0.5 / 0.1
+    real_weight: 4   # 0.5 / 0.1
     fake_weight: 0.555 # 0.5 / 0.9
 
 train:
-  input_dir: 'output/cgem_4k_mbt'
-  result_dir: 'results/cgem_result_4k_mbt_t1'
-  n_train: 3500
-  n_valid: 400
+  input_dir: 'output/cgem_4k_LINEGRAPH_final'
+  result_dir: 'results/cgem_result_4k_lg_t1'
+  n_train: 3200
+  n_valid: 600
   batch_size: 1
   n_epochs: 228
   preprocess_dataset:
 
 model:
   name: 'gnn_segment_classifier'
-  input_dim: 3
-  hidden_dim: 96
-  n_iters: 2
+  input_dim: 5
+  hidden_dim: 128
+  n_iters: 1
   loss_func: 'binary_cross_entropy'
   optimizer: 'Adam'
   learning_rate: 0.001

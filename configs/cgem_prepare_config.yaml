@@ -28,12 +28,16 @@ visualize:
   mode: '2d' # '2d'
 
 prepare:
-  output_dir: 'output/cgem_4k_mbt'
-  restrictions:
+  output_dir: 'output/cgem_4k_LINEGRAPH_finala'
   mode: 'cgem'
-  dphi_minmax: [-0.18, 0.18]
-  dz_minmax: [-0.15, 0.15]
-
+  linegraph:
+    axes: ['r', 'phi', 'z']
+    suffix: ['_p', '_c']
+    restrictions: [
+        [-0.18, 0.18],
+        [-0.15, 0.15]
+      ]
+    weight_r: 0.073
 with_stdout: False
 #  ellipses: True
 #

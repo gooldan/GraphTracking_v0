@@ -30,6 +30,15 @@ visualize:
 prepare:
   output_dir: 'cgem_first_try'
   mode: 'cgem'
+  linegraph:
+    axes: ['r', 'phi', 'z']
+    suffix: ['_p', '_c']
+    restrictions: [
+      [-0.18, 0.18],
+      [-0.15, 0.15]
+    ]
+    weight_r: 0.073
+
 
 with_stdout: False
 #  ellipses: True
