@@ -35,13 +35,10 @@ class GNNTrainer(BaseTrainer):
         self.model = get_model(name=name, **model_args).to(self.device)
 
         # TODO: LR scaling
-        # self.optimizer = getattr(torch.optim, optimizer)(
-        #     self.model.parameters(), lr=learning_rate)
+        self.optimizer = getattr(torch.optim, optimizer)(
+            self.model.parameters(), lr=learning_rate)
         # Functional loss functions
         self.loss_func = getattr(nn.functional, loss_func)
-
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
-        #self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
 
 
 #    @profile
@@ -105,7 +102,7 @@ class GNNTrainer(BaseTrainer):
             #self.logger.debug(' batch %d prec %f', )
             sum_correct += matches.sum().item()
             sum_total += matches.numel()
-        # self.scheduler.step(sum_loss / (i + 1))
+        #self.scheduler.step(sum_loss / (i + 1))
         summary['valid_time'] = time.time() - start_time
         summary['valid_loss'] = sum_loss / (i + 1)
         summary['valid_acc'] = sum_correct / sum_total
