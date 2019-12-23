@@ -249,6 +249,10 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
             logging.info("KEY ERROR ON %d event" % id)
             console_write('\n\n key error event %d \n\n' % id)
             continue
+        except AttributeError:
+            logging.info("ATTRIBUTE ERROR ON %d event" % id)
+            console_write('\n\n attr error event %d \n\n' % id)
+            continue
         save_graphs_new([(out, (output_dir + '/graph_%d' % (id)))])
         # except Exception as ex:
         #     logging.error(ex)
@@ -270,8 +274,8 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
 
 if __name__ == '__main__':
 
-    # draw_graph_result(graph_path="output/cgem_6k/graph_4037.npz")
-    # exit()
+    draw_graph_result(graph_path="output/cgem_4k_mbt/graph_379.npz")
+    exit()
     reader = ConfigReader("configs/cgem_prepare_config.yaml")
     cfg = reader.cfg
     df = parse_df(cfg['df'])
