@@ -1,0 +1,33 @@
+# basic visualization of network run on one event
+
+df:
+  parse:
+    args:
+      sep: '\s+'
+      encoding: 'utf-8'
+      nrows: 100000
+      filepath_or_buffer: 'data_cgem/200.txt'
+      names: ['event',  'x', 'y', 'z', 'station', 'track']
+
+  take:
+    event_ids: ['44'] # ['1..10'] (list of events with these indexes) or [':'] (all events from df)
+
+    drop_broken_tracks: False # __UNUSED__ drop tracks with the gaps or which does not start at station #0
+    convert_to_polar: False
+    normalize: False
+#      drop_old: True
+#    stations_sizes:
+#      cgem:
+#        x_minmax: [-166.6, 166.6]
+#        y_minmax: [-166.6, 166.6]
+#        z_minmax: [-423.5, 423.5]
+
+visualize:
+  draw_scatters_for_tracks: True # this option does not work
+
+  mode: '3d' # '2d'
+
+  x_coord: 'x' #x
+  y_coord: 'y' #y
+  z_coord: 'z' #z
+

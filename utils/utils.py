@@ -117,7 +117,8 @@ def parse_df(config_df):
     return pd.read_csv(**parse_args)
 
 def get_events_df(config_df, hits_df, preserve_fakes=True, drop_full_tracks=False):
-
+    # this is a method for parsing the yaml config and
+    # initial overall hits preprocessing (like transformation to the cylindrical coordinates or normalizing the dataset)
     eventIdsArr = config_df['event_ids']
 
     def parseSingleArrArg(arrArg):
@@ -140,6 +141,8 @@ def get_events_df(config_df, hits_df, preserve_fakes=True, drop_full_tracks=Fals
         res = np.append(res, toAppend)
 
     hits = hits_df[hits_df.event.isin(res)].copy()
+
+    # if i remember correctly it is not used for cgem
     if config_df['drop_broken_tracks']:
         for id, event in hits.groupby('event'):
             ev_hits = dropBroken(event, preserve_fakes=preserve_fakes, drop_full_tracks=drop_full_tracks)
@@ -147,6 +150,7 @@ def get_events_df(config_df, hits_df, preserve_fakes=True, drop_full_tracks=Fals
     else:
         assert preserve_fakes and not drop_full_tracks and "Error, you are not dropping broken but attempting to 'drop_full_tracks' or 'preserve_fakes'"
     if config_df['convert_to_polar'] or config_df['normalize']:
+        # important step for cgem data
         hits = normalize_convert_to_r_phi_z(hits, config_df['stations_sizes'],
                                             config_df['convert_to_polar'],
                                             config_df['normalize'] and config_df['normalize']['drop_old'])

@@ -70,6 +70,7 @@ def process_event(event_id, prepare_cfg, event_df, output_dir, logging):
     edge_factor = len(edges_filtered[edges_filtered.true_superedge == -1]) / len(edges_filtered[edges_filtered.true_superedge != -1])
     return mean_reduce_t, mean_purity_t, e_reduce, e_purity, len(edges_filtered), len(lg_nodes_t), edge_factor
 
+
 def draw_graph_result(G = None, graph_path = None):
     if G is not None:
         X, Ri, Ro, y = G
@@ -80,6 +81,8 @@ def draw_graph_result(G = None, graph_path = None):
 
     draw_single(X, Ri, Ro, y, c_fake = (0,0,0,0.1), xcord1=(0, 'z'), xcord2=(2, 'phi'), ycord=(4, 'r'))
 
+
+# base method for preparing events for the future neural network training
 def prepare_events(base_cfg, config_prepare, events_df):
     os.makedirs(config_prepare['output_dir'], exist_ok=True)
     logfilename = '%(asctime)s %(levelname)s %(message)s'
@@ -198,9 +201,13 @@ def get_edges_from_supernodes_ex(sn_from, sn_to):
     next_edges = sn_to.rename(columns={'from_ind':'cur_ind'})
     prev_edges['edge_index'] = prev_edges.index
     next_edges['edge_index'] = next_edges.index
+
+    # merge segments by their common hit in the middle
     line_graph_edges = pd.merge(prev_edges, next_edges, on='cur_ind', suffixes=('_p', '_c'))
 
     line_graph_edges = line_graph_edges.assign(true_superedge=-1)
+
+    # track the 'true' superedge. true_superedge is a combination of 2 consecutive true edges of 1 track
     index_true_superedge = line_graph_edges[(line_graph_edges.track_p == line_graph_edges.track_c) &
                                             (line_graph_edges.track_p != -1)]
     line_graph_edges.loc[index_true_superedge.index, 'true_superedge'] = index_true_superedge.track_p.values
@@ -209,9 +216,11 @@ def get_edges_from_supernodes_ex(sn_from, sn_to):
 
     ba = line_graph_edges[['dx_p', 'dy_p', 'dz_p']].values
     cb = line_graph_edges[['dx_c', 'dy_c', 'dz_c']].values
+    # this was an old weight function:
     # norm_ba = np.linalg.norm(ba, axis=1)
     # norm_cb = np.linalg.norm(cb, axis=1)
     # dot = np.einsum('ij,ij->i', ba, cb)
+    # ^may be useful later but now weight function is just a norm:
     w = np.linalg.norm(ba - cb, axis=1)
     line_graph_edges['weight'] = w
     indexation = ['weight', 'true_superedge', 'edge_index_p', 'edge_index_c']
@@ -219,14 +228,20 @@ def get_edges_from_supernodes_ex(sn_from, sn_to):
 
 
 def get_supernodes_df_ex(linegraph_cfg, one_station_segments, station=-1, STAION_COUNT=0, pi_fix=False):
+
     ret = pd.DataFrame()
     axes = linegraph_cfg['axes']
     suffix_p, suffix_c = linegraph_cfg['suffix']
 
+    # a bit of overgeneralization, all values are from yaml config
+    # usually suffixes are "_p" and "_c" (word "_previousЭ and "_current" shorten)
+    # axes are the r, phi and z if there were transformation to the cylindrical coordinates
     x0_y0_z0 = one_station_segments[[axes[0] + suffix_p, axes[1] + suffix_p, axes[2] + suffix_p]].values
     x1_y1_z1 = one_station_segments[[axes[0] + suffix_c, axes[1] + suffix_c, axes[2] + suffix_c]].values
+    # compute the difference of the hits coordinates information
     dx_dy_dz = x1_y1_z1 - x0_y0_z0
 
+    # if we are in the cylindrical coordinates, we need to fix the radian angle values overflows
     if pi_fix:
         dy_fixed = calc_dphi(one_station_segments[axes[1] + suffix_p].values,
                              one_station_segments[axes[1] + suffix_c].values)
@@ -248,10 +263,13 @@ def get_supernodes_df_ex(linegraph_cfg, one_station_segments, station=-1, STAION
 
                          dz=dx_dy_dz[:, 2], z=(station + 1) / STAION_COUNT)
 
+    # saving this information in the dataframe for later use and for visualization and evalutation purposes
     ret = ret.assign(from_ind=one_station_segments[['index_old' + suffix_p]].values.astype(np.uint32))
     ret = ret.assign(to_ind=one_station_segments[['index_old' + suffix_c]].values.astype(np.uint32))
     ret = ret.assign(track=-1)
     ret = ret.set_index(one_station_segments.index)
+
+    # saving this information in the dataframe for later use
     index_true_superedge = one_station_segments[
         (one_station_segments['track' + suffix_p] == one_station_segments['track' + suffix_c]) & \
         (one_station_segments['track' + suffix_p] != -1)]
@@ -267,17 +285,26 @@ def get_pd_line_graph_ex(prepare_cfg, segments, restrictions_func):
     restrictions_0, restrictions_1 = prepare_cfg['linegraph']['restrictions']
 
     by_stations = [df for (ind, df) in segments.groupby('station' + prepare_cfg['linegraph']['suffix'][0])]
+    # iterate each pair of stations
+    # for each 'i' we will have a 2 dataframes of segments which go
+    # from i-1'th to i'th stations and from i'th to i+1'th stations
     for i in range(1, len(by_stations)):
+        # take segments (which will be nodes as a result) which go
+        # from station i-1 to i AND from i to i+1
         supernodes_from = get_supernodes_df_ex(prepare_cfg['linegraph'], by_stations[i - 1], i - 1, 3, pi_fix=True)
         supernodes_to = get_supernodes_df_ex(prepare_cfg['linegraph'], by_stations[i], i, 3, pi_fix=True)
 
         if restrictions_func:
+            # if restriction function is defined, apply it to edges (supernodes)
             supernodes_from = restrictions_func(supernodes_from, restrictions_0, restrictions_1)
             supernodes_to = restrictions_func(supernodes_to, restrictions_0, restrictions_1)
 
         nodes = nodes.append(supernodes_from, sort=False)
         nodes = nodes.append(supernodes_to, sort=False)
 
+        # construct superedges (superedge is an edge which in fact
+        # represents 2 consecutive edges (and these edges have the one common hit being the ending of the 1-st edge and
+        # the beginning of the 2-nd edge), so it also captures information of the 3 consecutive hits)
         superedges = get_edges_from_supernodes_ex(supernodes_from, supernodes_to)
         edges = edges.append(superedges, ignore_index=True, sort=False)
 
@@ -286,6 +313,7 @@ def get_pd_line_graph_ex(prepare_cfg, segments, restrictions_func):
 
 def prepare_cgem(config_prepare, console_write, events_df, info_dict):
 
+    # nodes restriction function
     def apply_nodes_restrictions(nodes, restrictions_0, restrictions_1):
         return nodes[
             (nodes.dy > restrictions_0[0]) & (nodes.dy < restrictions_0[1]) &
@@ -300,19 +328,22 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
         logging.info("Processing event #%09d ...." % id)
         console_write('\r Processing event #%09d ....' % id)
         try:
+            # convert hits dataframe to the segments dataframe
             G = to_pandas_graph_df(event, suffx=['_p', '_c'], compute_is_true_track=True)
 
+            # passing the segments dataframe to construct line digraph
             nodes_t, edges_t = get_pd_line_graph_ex(config_prepare, G, apply_nodes_restrictions)
 
-            # skip completely broken events
+            # skip completely broken events (happens rarely but should not disturb the whole preprocessing)
             if edges_t.empty:
                 logging.info("SKIPPED broken %d event" % id)
                 console_write('\n\n skipping broken event %d \n\n' % id)
                 continue
 
+            # here we are filtering out superedges, trying to leave true superedges as much as we can
             edges_filtered = apply_edge_restriction(edges_t, config_prepare['linegraph']['weight_r'])
 
-
+            # some values for stats
             count_true = len(edges_filtered[edges_filtered.true_superedge != -1])
 
             if count_true == 0:
@@ -322,30 +353,39 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
             info_dict['reduce'].append(reduce_)
             info_dict['purity'].append(purity_)
 
+            # construct the output graph suitable for the neural network
             out = construct_output_graph(nodes_t, edges_filtered, ['y_p', 'y_c', 'z_p', 'z_c', 'z'], [np.pi, np.pi, 1., 1., 1.], 'edge_index_p', 'edge_index_c')
 
-
+            # some values for stats
             info_dict['node_count'].append(len(nodes_t))
             info_dict['edge_count'].append(len(edges_filtered))
             count_true = count_true if count_true > 0 else 1
             info_dict['edge_factor'].append((len(edges_filtered) - count_true) / count_true )
+            # again, can be uncommented for debugging purposes (to see the preprocessed event)
             # draw_graph_result(out)
             # exit()
+        # should never happen for cgem events
         except MemoryError:
             logging.info("MEMORY ERROR ON %d event" % id)
             console_write('\n\n mem error event %d \n\n' % id)
             continue
+        # for early stops
         except KeyboardInterrupt:
             break
+        # rarely happens in the almost empty events (when there are 1-3 hits in total in the whole event)
         except KeyError as err:
             logging.info("KEY ERROR ON %d event err:%s" % (id, err))
             console_write('\n\n key error event %d err:%s\n\n' % (id, err))
             continue
+        # rarely happens in the almost empty events (when there are 1-3 hits in total in the whole event)
         except AttributeError:
             logging.info("ATTRIBUTE ERROR ON %d event" % id)
             console_write('\n\n attr error event %d \n\n' % id)
             continue
+        # save output graph to file
         save_graphs_new([(out, (output_dir + '/graph_%d' % (id)))])
+
+        # better not to uncomment, really easy to footshoot yourself
         # except Exception as ex:
         #     logging.error(ex)
         #     console_write('\nexception!! event=%d\n' % id)
@@ -366,8 +406,12 @@ def prepare_cgem(config_prepare, console_write, events_df, info_dict):
 
 if __name__ == '__main__':
 
-    draw_graph_result(graph_path="output/cgem_4k_LINEGRAPH_final/graph_3413.npz")
-    exit()
+    # for seeing the result graph after the preprocessing you can uncomment fragment below;
+    # sometimes it helps to debug issues in preprocessing;
+    # this call also will display you precisely what will be feeded into the neural network
+    #draw_graph_result(graph_path="output/cgem_4k_LINEGRAPH_final/graph_3413.npz")
+    #exit()
+
     reader = ConfigReader("configs/cgem_prepare_config.yaml")
     cfg = reader.cfg
     df = parse_df(cfg['df'])

@@ -39,15 +39,5 @@ prepare:
     ]
     weight_r: 0.073
 
-
 with_stdout: False
-#  ellipses: True
-#
-#network: #False
-#  network_path: "results/no_vtx_tracknetV2_seed{13}_batch{32}_epoch{27}_loss{1.7983}_acc{0.8842}_circle{3.3569}.h5"
-
-
-
-
-#with_vertex: False
 

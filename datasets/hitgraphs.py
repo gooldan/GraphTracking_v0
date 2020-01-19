@@ -49,7 +49,8 @@ class HitGraphDataset(Dataset):
         pass
 
     def __getitem__(self, index):
-        # for finding bad events:  print(index, self.filenames[index])
+        # uncomment to find bad events in the dataset:
+        #print(index, self.filenames[index])
         if self.is_concrete_files:
             return load_graph(os.path.join(self.input_dir, self.df.iloc[index][['filenames']].values[0]))
         return load_graph(self.filenames[index])
