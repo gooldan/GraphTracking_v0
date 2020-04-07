@@ -67,17 +67,17 @@ def get_stations_constraints(df, stations_sizes):
            df.z.min() > z_min_max[0] and df.z.max() < z_min_max[1]
     return x_min_max, y_min_max, z_min_max
 
-def normalize_convert_to_r_phi_z(df, stations_sizes, convert_to_polar=False, drop_old=False):
-    if 'cgem' in stations_sizes:
-        x_min_max, y_min_max, z_min_max = stations_sizes['cgem']['x_minmax'], stations_sizes['cgem']['y_minmax'], stations_sizes['cgem']['z_minmax']
-    else:
-        x_min_max, y_min_max, z_min_max = get_stations_constraints(df, stations_sizes)
-    x_min, x_max = x_min_max
-    y_min, y_max = y_min_max
-    z_min, z_max = z_min_max
-    x_norm = 2 * (df.x - x_min) / (x_max - x_min) - 1
-    y_norm = 2 * (df.y - y_min) / (y_max - y_min) - 1
-    z_norm = (df.z - z_min) / (z_max - z_min)
+def normalize_convert_to_r_phi_z(df, convert_to_polar=False, drop_old=False):
+    x_min, x_max = min(df.x), max(df.x)
+    y_min, y_max = min(df.y), max(df.y)
+    z_min, z_max = min(df.z), max(df.z)
+
+    x_0 = (x_min + x_max)/2
+    y_0 = (y_min + y_max)/2
+    z_0 = (z_min + z_max)/2
+    x_norm = 2*(df.x - x_0 ) / (x_max - x_min)
+    y_norm = 2*(df.y - y_0 ) / (y_max - y_min)
+    z_norm = 2*(df.z - z_0) / (z_max - z_min)
     if convert_to_polar:
         df = df.assign(y_old=df.y, x_old=df.x, z_old=df.z)
         del df['z']
@@ -94,6 +94,7 @@ def normalize_convert_to_r_phi_z(df, stations_sizes, convert_to_polar=False, dro
         del df['x']
         del df['y']
     return df
+
 
 def dropBroken(df, preserve_fakes, drop_full_tracks):
     assert df.event.nunique() == 1

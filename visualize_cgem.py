@@ -1,6 +1,8 @@
 from utils.old_visualizer import Visualizer
 from utils.config_reader import ConfigReader
-from utils.utils import get_events_df, parse_df, calc_purity_reduce_factor, apply_edge_restriction, apply_node_restriction
+from utils.utils import get_events_df, parse_df, \
+    calc_purity_reduce_factor, apply_edge_restriction, \
+        apply_node_restriction, normalize_convert_to_r_phi_z
 from utils.graph import to_nx_graph, to_line_graph, get_weight_stats, \
     get_linegraph_superedges_stat, to_pandas_graph_df, get_linegraph_stats_from_pandas, \
     get_reduced_df_graph, get_pd_line_graph, run_mbt_graph, calc_dphi
@@ -65,7 +67,7 @@ if __name__ == '__main__':
     cfg = reader.cfg
 
     df = parse_df(cfg['df'])
-
+    df = normalize_convert_to_r_phi_z(df, True)
     events_df = get_events_df(cfg['df']['take'], df, preserve_fakes=True)
 
     # idx = 0
