@@ -72,9 +72,9 @@ def normalize_convert_to_r_phi_z(df, convert_to_polar=False, drop_old=False):
     y_min, y_max = min(df.y), max(df.y)
     z_min, z_max = min(df.z), max(df.z)
 
-    x_0 = (x_min + x_max)/2
-    y_0 = (y_min + y_max)/2
-    z_0 = (z_min + z_max)/2
+    x_0 = np.mean(df.x)
+    y_0 = np.mean(df.x)
+    z_0 = np.mean(df.x)
     x_norm = 2*(df.x - x_0 ) / (x_max - x_min)
     y_norm = 2*(df.y - y_0 ) / (y_max - y_min)
     z_norm = 2*(df.z - z_0) / (z_max - z_min)
