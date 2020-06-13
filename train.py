@@ -58,9 +58,12 @@ if __name__ == '__main__':
     trainer.build_model(**cfg.get('model', {}))
     trainer.print_model_summary()
     # Run the training
-    summary = trainer.train(train_data_loader=train_data_loader,
-                            valid_data_loader=valid_data_loader,
-                            n_epochs=config_train['n_epochs'])
+    try:
+        summary = trainer.train(train_data_loader=train_data_loader,
+                                valid_data_loader=valid_data_loader,
+                                n_epochs=config_train['n_epochs'])
+    except KeyboardInterrupt:
+        pass
     trainer.write_summaries()
 
     # Print some conclusions

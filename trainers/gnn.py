@@ -31,6 +31,10 @@ class GNNTrainer(BaseTrainer):
                     loss_func='binary_cross_entropy', **model_args):
         """Instantiate our model"""
 
+        stdout.write("=====DEVICE INFO======\n")
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        stdout.write('Using device: %s\n' % device)
+        stdout.write("=====DEVICE INFO======\n")
         # Construct the model
         self.model = get_model(name=name, **model_args).to(self.device)
 
