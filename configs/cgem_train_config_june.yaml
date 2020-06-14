@@ -1,0 +1,21 @@
+trainer:
+    real_weight: 3   # 0.5 / 0.1
+    fake_weight: 0.555 # 0.5 / 0.9
+
+train:
+  input_dir: 'output/cgem_6k_LINEGRAPH'
+  result_dir: 'results/cgem_result_6k_june_home_GPU_1'
+  n_train: 4200
+  n_valid: 1600
+  batch_size: 8
+  n_epochs: 55
+  preprocess_dataset:
+
+model:
+  name: 'gnn_segment_classifier'
+  input_dim: 5
+  hidden_dim: 96
+  n_iters: 2
+  loss_func: 'binary_cross_entropy'
+  optimizer: 'Adam'
+  learning_rate: 0.001
